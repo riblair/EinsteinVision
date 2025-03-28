@@ -10,6 +10,12 @@ THETA_LOW = 1.4
 
 MAX_K = 5
 
+# Key improvements that need to be made
+# Reject Thetas in another range (ones that are too vertical)
+# Implement 1 lane solution
+# Reject data that is too far away from detected lines
+# Implement some consistency between frames perhaps 
+
 def clean_data(lines):
     cleaned_lines = []
     if lines is not None:
@@ -25,7 +31,7 @@ def cluster_lines(lines):
     if len(line_arr) < 7: # not enough data to be clustering? NOT ELEGANT, FIX!
         return None
     total_variance = np.var(line_arr, axis=0).sum()
-    print(total_variance)
+    # print(total_variance)
     if total_variance < 1:
         return None 
 
@@ -35,7 +41,7 @@ def cluster_lines(lines):
         score = silhouette_score(line_arr, kmeans.labels_)
         scores.append((k, score))
     best_k = max(scores, key=lambda x: x[1])[0]
-    print(scores)
+    # print(scores)
     return kmeans_out[best_k-2]
 
 def add_lines(frame, lines, color):
@@ -54,6 +60,19 @@ def add_lines(frame, lines, color):
             else:
                 cv2.line(frame, pt1, pt2, color, 3, cv2.LINE_AA)
     return frame
+
+def draw_lane_lines(frame, kmeans):
+    lines = kmeans.cluster_centers_
+    for i in range(lines.shape[0]):
+        rho = lines[i][0]
+        theta = lines[i][1]
+        a = math.cos(theta)
+        b = math.sin(theta)
+        x0 = a * rho
+        y0 = b * rho
+        pt1 = (int(x0 + 2000*(-b)), int(y0 + 2000*(a)))
+        pt2 = (int(x0 - 2000*(-b)), int(y0 - 2000*(a)))
+        cv2.line(frame, pt1, pt2, (255,255,255), 3, cv2.LINE_AA)
 
 def add_linesP(frame, linesP, color):
     if linesP is not None:
@@ -102,13 +121,13 @@ def show_images(edges, white_pixels, white_edges, yellow_edges, frame, lines_W, 
     cv2.imshow("Yellow Edges", yellow_edges)
     cv2.imshow("original", frame)
     # cv2.imshow("GT", cv2.resize(frame, None, fx=scale, fy=scale))
-    if counter > 500 and counter % 50 == 0:
-        graph_raw_lines(lines_W)
+    # if counter > 500 and counter % 50 == 0:
+    #     graph_raw_lines(lines_W)
     cv2.waitKey(time_scale)
 
 def main():
     counter = 0 
-    cap = cv2.VideoCapture("scene1_front.mp4")
+    cap = cv2.VideoCapture("scene1_front.mp4") # scene 6 is a disaster...
     if not cap.isOpened():
         print("Error: Could not open video file.")
         exit()
@@ -146,8 +165,8 @@ def main():
         # linesP_W = cv2.HoughLinesP(white_edges, 1, np.pi / 180, 100, None, 100, 25)
         # linesP_Y = cv2.HoughLinesP(yellow_edges, 1, np.pi / 180, 100, None, 100, 25)
 
-        frame = add_lines(frame, lines_W, (255,255,255))
-        frame = add_lines(frame, lines_Y, (0,255,255))
+        # frame = add_lines(frame, lines_W, (255,255,255))
+        # frame = add_lines(frame, lines_Y, (0,255,255))
         # frame = add_linesP(frame, linesP_W, (255,255,255))
         # frame = add_linesP(frame, linesP_Y, (255,255,0))
         lines_W = clean_data(lines_W)
@@ -158,9 +177,12 @@ def main():
         if len(all_lines):
             kmeans = cluster_lines(all_lines)
             if kmeans is None:
+                # we have one group, need to find the centroid of this group 
                 pass # hmm
-            if counter > 100 and counter % 50 == 0:
-                graph_clusters(kmeans, all_lines)
+            else:
+                draw_lane_lines(frame, kmeans)
+            # if counter > 100 and counter % 50 == 0:
+            #     graph_clusters(kmeans, all_lines)
 
         show_images(edges, white_pixels, white_edges, yellow_edges, frame, lines_W, counter)
             
