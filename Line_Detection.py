@@ -5,10 +5,24 @@ import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
 
+import torch
+
+LOW_WHITE, HIGH_WHITE = 150, 255
+
+LOW_H, HIGH_H = 10, 80
+LOW_S, HIGH_S = 49,255
+LOW_V, HIGH_V = 112,255
+
+LOW_SIG, HIGH_SIG = 30,80
+
 THETA_HIGH = 1.8
 THETA_LOW = 1.4
 
 MAX_K = 5
+
+
+
+# TODO - implement monocular depth estimationn via ZoeDepth
 
 # Key improvements that need to be made
 # Reject Thetas in another range (ones that are too vertical)
@@ -111,9 +125,9 @@ def graph_clusters(kmeans, lines):
         plt.scatter(rhos, thetas, c=colors[i])
     plt.show()
 
-def show_images(edges, white_pixels, white_edges, yellow_edges, frame, lines_W, counter):
+def show_images(edges, white_pixels, white_edges, yellow_edges, frame, lines_W):
     scale = 0.33
-    time_scale = 10
+    time_scale = 27
     cv2.imshow("edge_map", cv2.resize(edges, None, fx=scale, fy=scale))
     cv2.imshow("white_pixels", cv2.resize(white_pixels, None, fx=scale, fy=scale))
     # cv2.imshow("yellow_pixels", cv2.resize(yellow_pixels, None, fx=scale, fy=scale))
@@ -125,9 +139,55 @@ def show_images(edges, white_pixels, white_edges, yellow_edges, frame, lines_W, 
     #     graph_raw_lines(lines_W)
     cv2.waitKey(time_scale)
 
+def detect_lines(frame) -> np.ndarray: 
+    imshape = frame.shape
+
+    """Convert frame to hsv for detecting yellow pixels, and hls for detecting white pixels """
+    frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    frame_hls = cv2.cvtColor(frame, cv2.COLOR_BGR2HLS)
+
+    """ Color Threshholding and edge detection """
+    white_pixels = cv2.inRange(frame_hls, (0,LOW_WHITE, 0), (255,HIGH_WHITE, 255))
+    yellow_pixels = cv2.inRange(frame_hsv, (LOW_H,LOW_S,LOW_V), (HIGH_H,HIGH_S,HIGH_V))
+    edges = cv2.Canny(frame, LOW_SIG, HIGH_SIG)
+    edges = cv2.dilate(edges, cv2.getStructuringElement(cv2.MORPH_RECT,(5,5)))
+
+    white_edges = cv2.bitwise_and(white_pixels, edges)
+    yellow_edges = cv2.bitwise_and(yellow_pixels, edges)
+
+    # truncate entries above the halfway line on the image
+    white_edges[0:int(imshape[0]/2), :] = 0
+    yellow_edges[0:int(imshape[0]/2), :] = 0
+
+    """Extract lines from image using cv2 HoughLines"""
+    lines_W = cv2.HoughLines(white_edges, 1, np.pi / 180, 80, None, 0, 0)
+    lines_Y = cv2.HoughLines(yellow_edges, 1, np.pi / 180, 80, None, 0, 0)
+
+    lines_W = clean_data(lines_W)
+    lines_Y = clean_data(lines_Y)
+
+    all_lines = lines_W + lines_Y
+    
+    """Cluster detected lines into groups and extract centroids """
+    if len(all_lines):
+        kmeans = cluster_lines(all_lines)
+        if kmeans:
+            return kmeans.cluster_centers_
+    # show_images(edges, white_pixels, white_edges, yellow_edges, frame, lines_W)
+    return None
+
+def map_to_range(arr, min_val, max_val, new_min, new_max):
+    return [new_min + (x - min_val) * (new_max - new_min) / (max_val - min_val) for x in arr]
+
 def main():
-    counter = 0 
     cap = cv2.VideoCapture("scene1_front.mp4") # scene 6 is a disaster...
+    # torch.hub.help("intel-isl/MiDaS", "DPT_BEiT_L_384", force_reload=True)
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    repo = "isl-org/ZoeDepth"
+    # Zoe_N
+    model_zoe_n = torch.hub.load(repo, "ZoeD_N", pretrained=True)
+    zoe = model_zoe_n.to(device)
+
     if not cap.isOpened():
         print("Error: Could not open video file.")
         exit()
@@ -136,56 +196,22 @@ def main():
         ret, frame = cap.read()
         if not ret: # no more frames
             break
-        imshape = frame.shape
-        frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        frame_hls = cv2.cvtColor(frame, cv2.COLOR_BGR2HLS)
 
-        low_white, high_white = 150, 255
+        # lines = detect_lines(frame) # returns L lines in a np.ndarray. Form Lx2 w/ axis 1 containing [rho, theta]
+        # if not lines:
+        #     continue
 
-        low_h, high_h = 10, 80
-        low_s, high_s = 49,255
-        low_v, high_v = 112,255
+        depth_numpy = zoe.infer_pil(frame)
 
-        low_sig, high_sig = 30,80 # 71,178
+        remapped = map_to_range(depth_numpy, np.min(depth_numpy), np.max(depth_numpy), 0, 255)
+        remapped = np.array(remapped, dtype=np.uint8)
 
-        white_pixels = cv2.inRange(frame_hls, (0,low_white, 0), (255,high_white, 255))
-        yellow_pixels = cv2.inRange(frame_hsv, (low_h,low_s,low_v), (high_h,high_s,high_v))
-        edges = cv2.Canny(frame, low_sig,high_sig)
-        edges = cv2.dilate(edges, cv2.getStructuringElement(cv2.MORPH_RECT,(5,5)))
+        cv2.imshow('a', cv2.resize(remapped, remapped.shape/2))
 
-        white_edges = cv2.bitwise_and(white_pixels, edges)
-        yellow_edges = cv2.bitwise_and(yellow_pixels, edges)
+        cv2.waitKey(27)
+        # cv2.waitKey()
+        # cv2.destroyAllWindows()
+        # exit(1)
 
-        # truncate entries above the halfway line on the image
-        white_edges[0:int(imshape[0]/2), :] = 0
-        yellow_edges[0:int(imshape[0]/2), :] = 0
-
-        lines_W = cv2.HoughLines(white_edges, 1, np.pi / 180, 80, None, 0, 0)
-        lines_Y = cv2.HoughLines(yellow_edges, 1, np.pi / 180, 80, None, 0, 0)
-        # linesP_W = cv2.HoughLinesP(white_edges, 1, np.pi / 180, 100, None, 100, 25)
-        # linesP_Y = cv2.HoughLinesP(yellow_edges, 1, np.pi / 180, 100, None, 100, 25)
-
-        # frame = add_lines(frame, lines_W, (255,255,255))
-        # frame = add_lines(frame, lines_Y, (0,255,255))
-        # frame = add_linesP(frame, linesP_W, (255,255,255))
-        # frame = add_linesP(frame, linesP_Y, (255,255,0))
-        lines_W = clean_data(lines_W)
-        lines_Y = clean_data(lines_Y)
-
-        all_lines = lines_W + lines_Y
-        # print(all_lines)
-        if len(all_lines):
-            kmeans = cluster_lines(all_lines)
-            if kmeans is None:
-                # we have one group, need to find the centroid of this group 
-                pass # hmm
-            else:
-                draw_lane_lines(frame, kmeans)
-            # if counter > 100 and counter % 50 == 0:
-            #     graph_clusters(kmeans, all_lines)
-
-        show_images(edges, white_pixels, white_edges, yellow_edges, frame, lines_W, counter)
-            
-        counter +=1
 if __name__ == '__main__':
     main()
