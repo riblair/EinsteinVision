@@ -144,13 +144,3 @@ def show_direction_RANSAC(best_direction_list, best_inliers_list, line_origins =
         p0 = line_origins[i] if line_origins is not None else best_inliers_list[i][0]
         px = p0 + 5* best_direction_list[i]
         ax.plot([float(p0[0]), float(px[0])], [float(p0[1]), float(px[1])], [float(p0[2]), float(px[2])], color=COLORS[i])
-    
-def write_json(object_list: list):
-
-    data_dictionary = {
-            "camera_pose" : [0, 0, 1.2, 1.54, 0.0, 0.0],
-            "objects" : [obj.to_json() for obj in object_list]
-        }
-
-    with open("lane_objects.json", 'w') as f:
-        f.write(json.dumps(data_dictionary, indent=4))

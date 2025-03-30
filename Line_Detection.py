@@ -171,6 +171,24 @@ def get_origins_from_points(best_direction_list, best_inliers_list):
         origins.append(origin)
     return origins
 
+
+def get_line_objects(frame, depth_image) -> list[Line]:
+    lines = detect_lines(frame)
+    if lines is None:
+            return []
+    line_pixels = find_points_on_line(lines, frame.shape[:2])
+    line_points = pixels_to_world_points(depth_image, line_pixels)
+    best_direction_list, best_inliers_list = get_ray_from_points(line_points)
+    line_origins = get_origins_from_points(best_direction_list, best_inliers_list)
+    line_objs = []
+    for origin in line_origins:
+        line_objs.append(Line(origin[0]))
+    
+    # util.write_json(line_objs)
+    # util.show_direction_RANSAC(best_direction_list, best_inliers_list, line_origins)
+    # util.visualize_stuff(frame, lines, depth_image)
+    return line_objs
+
 def main():
     cap = cv2.VideoCapture("scene1_front.mp4") # scene 6 is a disaster...
     # torch.hub.help("intel-isl/MiDaS", "DPT_BEiT_L_384", force_reload=True)
@@ -191,24 +209,7 @@ def main():
             counter+=1
             continue
 
-        lines = detect_lines(frame) # returns L lines in a np.ndarray. Form Lx2 w/ axis 1 containing [rho, theta]
-        if lines is None:
-            continue
-        line_pixels = find_points_on_line(lines, frame.shape[:2])
-        depth_numpy = zoe.infer_pil(frame) # very slow :/ could batch them to speed it up?
-        line_points = pixels_to_world_points(depth_numpy, line_pixels)
-
-        best_direction_list, best_inliers_list = get_ray_from_points(line_points)
-        
-        line_origins = get_origins_from_points(best_direction_list, best_inliers_list)
-
-        line_objs = []
-        for origin in line_origins:
-            line_objs.append(Line(origin[0]))
-        
-        util.write_json(line_objs)
-        util.show_direction_RANSAC(best_direction_list, best_inliers_list, line_origins)
-        util.visualize_stuff(frame, lines, depth_numpy)
+        get_line_objects(frame, zoe.infer_pil(frame))
 
 if __name__ == '__main__':
     main()
