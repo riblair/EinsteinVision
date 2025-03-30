@@ -19,6 +19,8 @@ K_MAT = np.array([[1594.7,         0,    655.3],
 
 HIGH_THETA = 1.8
 LOW_THETA = 1.4
+MAX_ITER = 500
+LOSS_THRESH = 0.05
 
 def add_lines(frame, lines, color):
     if lines is not None:
@@ -101,12 +103,14 @@ def show_line_pixels(line_pixels):
     for i in range(len(line_pixels)):
         ax.scatter(line_pixels[i][:,1], line_pixels[i][:,0], c=COLORS[i])
 
-def show_line_points(line_points):
-    fig = plt.figure()
-    ax = fig.add_subplot(projection='3d')
-    ax.set_xlabel('X-Axis')
-    ax.set_ylabel('Y-Axis')
-    ax.set_zlabel('Z-Axis')
+def show_line_points(line_points, ax_ref=None):
+    if ax_ref is None:
+        ax = plt.figure().add_subplot(projection='3d') if ax_ref == None else ax_ref
+        ax.set_xlabel('X-Axis')
+        ax.set_ylabel('Y-Axis')
+        ax.set_zlabel('Z-Axis')
+    else:
+        ax = ax_ref
     for i in range(len(line_points)):
         ax.scatter(line_points[i][:,0],line_points[i][:,1],line_points[i][:,2], c=COLORS[i])
 
@@ -120,3 +124,16 @@ def visualize_stuff(frame, lines, depth_map):
     cv2.imshow('depth', remapped)
     cv2.waitKey(100)
     plt.show()
+
+def show_direction_RANSAC(best_direction_list, best_inliers_list):
+    fig = plt.figure()
+    ax = fig.add_subplot(projection='3d')
+    ax.set_xlabel('X-Axis')
+    ax.set_ylabel('Y-Axis')
+    ax.set_zlabel('Z-Axis')
+    show_line_points(best_inliers_list, ax)
+    for i in range(len(best_direction_list)):
+        p0 = best_inliers_list[i][0]
+        px = p0 + 5* best_direction_list[i]
+        ax.plot([float(p0[0]), float(px[0])], [float(p0[1]), float(px[1])], [float(p0[2]), float(px[2])], color=COLORS[i])
+    

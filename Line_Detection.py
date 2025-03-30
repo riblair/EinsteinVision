@@ -119,6 +119,34 @@ def pixels_to_world_points(depth_image, line_pixels):
 
     return line_point_list
 
+def get_ray_from_points(line_points_list): 
+    best_direction_list = []
+    best_inliers_list = []
+    for i in range(len(line_points_list)):
+        best_direction = None
+        best_inliers = []
+        line_points = line_points_list[i]
+        for j in range(util.MAX_ITER):
+            indices = np.random.choice(line_points.shape[0], size=2)
+            direction =  line_points[indices[0]] - line_points[indices[1]]
+            unit_d = direction / np.linalg.norm(direction)
+            if unit_d[2] < 0: # ensures ray is pointing away from camera
+                unit_d = -unit_d
+            inliers = []
+            for point in line_points:
+                loss = np.linalg.norm(np.cross(point - line_points[indices[1]], unit_d))
+                if loss < util.LOSS_THRESH: # arbitrarily chosen threshold
+                    inliers.append(point)
+            if len(inliers) > len(best_inliers):
+                print(f"percentage of inliers found: {100 * len(inliers)/len(line_points)}")
+                best_inliers = inliers
+                best_direction = unit_d
+        # COULD RUN-secondary ransac to create even better direction estimate
+        best_direction_list.append(best_direction)
+        best_inliers_list.append(np.array(best_inliers))
+    
+    return best_direction_list, best_inliers_list
+
 def main():
     cap = cv2.VideoCapture("scene1_front.mp4") # scene 6 is a disaster...
     # torch.hub.help("intel-isl/MiDaS", "DPT_BEiT_L_384", force_reload=True)
@@ -145,7 +173,14 @@ def main():
         line_pixels = find_points_on_line(lines, frame.shape[:2])
         depth_numpy = zoe.infer_pil(frame) # very slow :/ could batch them to speed it up?
         line_points = pixels_to_world_points(depth_numpy, line_pixels)
-        util.show_line_points(line_points)
+
+        best_direction_list, best_inliers_list = get_ray_from_points(line_points)
+        # TODO:
+        # find X on point in ray where z=0
+        # create "line object w/ method that exports line to JSON"
+
+        # util.show_line_points(line_points)
+        util.show_direction_RANSAC(best_direction_list, best_inliers_list)
         util.visualize_stuff(frame, lines, depth_numpy)
 
 if __name__ == '__main__':
