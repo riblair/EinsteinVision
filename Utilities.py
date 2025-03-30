@@ -1,6 +1,7 @@
-import matplotlib.pyplot as plt
 import cv2
+import json
 import math
+import matplotlib.pyplot as plt
 import numpy as np
 
 COLORS = ['Red','Green', 'Blue', 'Orange', 'Black']
@@ -19,8 +20,11 @@ K_MAT = np.array([[1594.7,         0,    655.3],
 
 HIGH_THETA = 1.8
 LOW_THETA = 1.4
-MAX_ITER = 500
+
+""" Ransac parameterr"""
+MAX_ITER = 250
 LOSS_THRESH = 0.05
+PERCENT_CUTOFF = 60
 
 def add_lines(frame, lines, color):
     if lines is not None:
@@ -125,7 +129,7 @@ def visualize_stuff(frame, lines, depth_map):
     cv2.waitKey(100)
     plt.show()
 
-def show_direction_RANSAC(best_direction_list, best_inliers_list):
+def show_direction_RANSAC(best_direction_list, best_inliers_list, line_origins = None):
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
     ax.set_xlabel('X-Axis')
@@ -133,7 +137,16 @@ def show_direction_RANSAC(best_direction_list, best_inliers_list):
     ax.set_zlabel('Z-Axis')
     show_line_points(best_inliers_list, ax)
     for i in range(len(best_direction_list)):
-        p0 = best_inliers_list[i][0]
+        p0 = line_origins[i] if line_origins is not None else best_inliers_list[i][0]
         px = p0 + 5* best_direction_list[i]
         ax.plot([float(p0[0]), float(px[0])], [float(p0[1]), float(px[1])], [float(p0[2]), float(px[2])], color=COLORS[i])
     
+def write_json(object_list: list):
+
+    data_dictionary = {
+            "camera_pose" : [0, 0, 1.2, 1.54, 0.0, 0.0],
+            "objects" : [obj.to_json() for obj in object_list]
+        }
+
+    with open("lane_objects.json", 'w') as f:
+        f.write(json.dumps(data_dictionary, indent=4))

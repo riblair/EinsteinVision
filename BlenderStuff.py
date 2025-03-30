@@ -17,10 +17,11 @@ def main():
     bpy.ops.object.light_add(type='SUN', location=(0, 0, 10))
     bpy.data.lights["Sun"].energy = 5  # Harnessing the full unmatched power of the sun
 
-    object_loader("objects.json", bpy.data.objects.get("Camera"))
+    object_loader("lane_objects.json", bpy.data.objects.get("Camera"))
+    # object_loader("lane_objects.json", bpy.data.objects.get("Camera"))
     for ob in scene.objects:
         print(ob)
-    render_scene(scene, "test_image.png")
+    render_scene(scene, "test_lanes.png")
 
 def object_loader(json_filepath: str, camera):
     with open(json_filepath, 'r') as fp:
@@ -32,19 +33,19 @@ def object_loader(json_filepath: str, camera):
     camera.rotation_euler = mathutils.Euler(cam_euler)
 
     for obj in data["objects"]:
-        if obj["type"] == "box":
-            box_handler(mathutils.Vector(obj["pose"][0:3]), mathutils.Euler(obj["pose"][3:]))
+        if obj["type"] == "lane_line":
+            obj_handler(mathutils.Vector(obj["pose"][0:3]), mathutils.Euler(obj["pose"][3:]))
+
+    # for obj in data["objects"]:
+    #     if obj["type"] == "box":
+    #         obj_handler(mathutils.Vector(obj["pose"][0:3]), mathutils.Euler(obj["pose"][3:]))
 
 def render_scene(scene, file_path):
     scene.render.image_settings.file_format = 'PNG'
     scene.render.filepath = file_path
     bpy.ops.render.render(write_still = 1)
 
-def box_handler(pose_vector, euler_vector):
-    # mesh = bpy.ops.import_mesh.stl("INVOKE_DEFAULT", filepath="Assets/Dustbin.blend")
-    # # speed = bpy.ops.import_curve.svg("Assets/Speed_Limit_blank_sign.svg") # for meshes
-    # # exit(1)
-    # ob = bpy.data.objects.new('cube', mesh)
+def obj_handler(pose_vector, euler_vector):
 
     with bpy.data.libraries.load("Assets/Lane_Line.blend", link=False) as (data_from, data_to):
         data_to.objects = [ name for name in data_from.objects if name not in ["Light", "Camera"]]

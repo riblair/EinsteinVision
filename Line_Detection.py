@@ -13,6 +13,16 @@ import Utilities as util
 # Reject data that is too far away from detected lines
 # Implement some consistency between frames perhaps 
 
+class Line():
+    def __init__(self, x_offset):
+        self.x_offset = x_offset
+
+    def to_json(self):
+        return {
+            "type": "lane_line",
+            "pose": [self.x_offset, 0, 0, 0, 0, 0]
+        }
+
 def clean_data(lines):
     cleaned_lines = []
     if lines is not None:
@@ -138,14 +148,26 @@ def get_ray_from_points(line_points_list):
                 if loss < util.LOSS_THRESH: # arbitrarily chosen threshold
                     inliers.append(point)
             if len(inliers) > len(best_inliers):
-                print(f"percentage of inliers found: {100 * len(inliers)/len(line_points)}")
+                percentage = 100 * len(inliers)/len(line_points)
+                print(f"percentage of inliers found: {round(percentage,2)}%")
                 best_inliers = inliers
                 best_direction = unit_d
+                if percentage > util.PERCENT_CUTOFF:
+                    break
         # COULD RUN-secondary ransac to create even better direction estimate
         best_direction_list.append(best_direction)
         best_inliers_list.append(np.array(best_inliers))
     
     return best_direction_list, best_inliers_list
+
+def get_origins_from_points(best_direction_list, best_inliers_list):
+    origins = []
+    for i in range(len(best_direction_list)):
+        p0 = best_inliers_list[i][-1] # 
+        t = -p0[2] / best_direction_list[i][2]
+        origin = p0 + t* best_direction_list[i]
+        origins.append(origin)
+    return origins
 
 def main():
     cap = cv2.VideoCapture("scene1_front.mp4") # scene 6 is a disaster...
@@ -175,12 +197,15 @@ def main():
         line_points = pixels_to_world_points(depth_numpy, line_pixels)
 
         best_direction_list, best_inliers_list = get_ray_from_points(line_points)
-        # TODO:
-        # find X on point in ray where z=0
-        # create "line object w/ method that exports line to JSON"
+        
+        line_origins = get_origins_from_points(best_direction_list, best_inliers_list)
 
-        # util.show_line_points(line_points)
-        util.show_direction_RANSAC(best_direction_list, best_inliers_list)
+        line_objs = []
+        for origin in line_origins:
+            line_objs.append(Line(origin[1]))
+        
+        util.write_json(line_objs)
+        util.show_direction_RANSAC(best_direction_list, best_inliers_list, line_origins)
         util.visualize_stuff(frame, lines, depth_numpy)
 
 if __name__ == '__main__':
