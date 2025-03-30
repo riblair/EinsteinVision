@@ -8,7 +8,6 @@ from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
 import Utilities as util 
 # Key improvements that need to be made
-# Reject Thetas in another range (ones that are too vertical)
 # Implement 1 lane solution
 # Reject data that is too far away from detected lines
 # Implement some consistency between frames perhaps 
@@ -24,6 +23,7 @@ class Line():
         }
 
 def clean_data(lines):
+    # TODO - also reject vertical lines (that aren't centered perhaps)
     cleaned_lines = []
     if lines is not None:
         for line in lines:
@@ -85,8 +85,8 @@ def detect_lines(frame) -> np.ndarray:
             return kmeans.cluster_centers_
     return None
 
-def pix_in_range(x, y, shape):
-    return y > 0 and x > 0 and y < shape[0] and x < shape[1]
+def pix_in_range(u, v, shape): # reject pixels that are outside of frame and above the half-way mark
+    return v > 0 and u > 0 and v < shape[0]/2 and u < shape[1]
 
 def find_points_on_line(lines, imshape):
     pix_space = np.linspace(-1000, 1000, 2001, dtype=np.int16).reshape(2001, 1)
@@ -98,15 +98,15 @@ def find_points_on_line(lines, imshape):
         theta = lines[i][1]
         a = math.cos(theta)
         b = math.sin(theta)
-        x0 = a * rho
-        y0 = b * rho
+        u0 = a * rho
+        v0 = b * rho
 
-        xs = pix_space[:] * -b + x0
-        ys = pix_space[:] * a + y0
+        us = pix_space[:] * -b + u0
+        vs = pix_space[:] * a + v0
 
-        pixels = np.hstack((ys,xs)).astype(np.int16)
+        pixels = np.hstack((us,vs)).astype(np.int16)
 
-        pixels_in_range = np.array([pixel for pixel in pixels if pix_in_range(pixel[1], pixel[0], imshape)])
+        pixels_in_range = np.array([pixel for pixel in pixels if pix_in_range(pixel[0], pixel[1], imshape)])
         unique_pixels = np.unique(pixels_in_range, axis=0)
         line_pixels.append(unique_pixels)
 
@@ -114,18 +114,20 @@ def find_points_on_line(lines, imshape):
 
 def pixels_to_world_points(depth_image, line_pixels):
     # takes pixels from the lines - list of np.ndarrays with shape (Nx2) where N is number of points in line
-    # currently in form v, u
+    # TODO: This function is incomplete as the translation from pixel to world does not take into account the extriniscs
+    # currently assumes camera extrinics are [np.eye(3) | np.zeros(3,1)]
 
     line_point_list = []
     for i in range(len(line_pixels)): 
-        depths = np.array([depth_image[pixel[0], pixel[1]] for pixel in line_pixels[i]])
+        depths = np.array([depth_image[pixel[1], pixel[0]] for pixel in line_pixels[i]])
 
         # something about this seems very off. Def check this. 
-        x_pix = (line_pixels[i][ :, 1] - util.K_MAT[0,2]) / util.K_MAT[0,0]
-        y_pix = (line_pixels[i][ :, 0] - util.K_MAT[1,2]) / util.K_MAT[1,1]
-        line_points = np.array([x_pix, y_pix,depths]).T
-
-        line_point_list.append(line_points)
+        x_pix = (line_pixels[i][:, 0] - util.K_MAT[0,2]) / util.K_MAT[0,0]
+        y_pix = (line_pixels[i][:, 1] - util.K_MAT[1,2]) / util.K_MAT[1,1]
+        line_points = np.array([x_pix, y_pix,np.ones((x_pix.shape[0]))])
+        line_points = line_points * depths # DEBUG
+        # line_points = np.array([x_pix, y_pix,depths]).T
+        line_point_list.append(line_points.T)
 
     return line_point_list
 
@@ -202,7 +204,7 @@ def main():
 
         line_objs = []
         for origin in line_origins:
-            line_objs.append(Line(origin[1]))
+            line_objs.append(Line(origin[0]))
         
         util.write_json(line_objs)
         util.show_direction_RANSAC(best_direction_list, best_inliers_list, line_origins)

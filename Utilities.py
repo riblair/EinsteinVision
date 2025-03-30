@@ -18,13 +18,17 @@ K_MAT = np.array([[1594.7,         0,    655.3],
                   [     0,    1607.7,    414.4],
                   [     0,         0,        1]])
 
+WORLD__ROT = np.array([[1, 0, 0],
+                        [0, 0, 1],
+                        [0, -1, 0]])
+
 HIGH_THETA = 1.8
 LOW_THETA = 1.4
 
 """ Ransac parameterr"""
 MAX_ITER = 250
 LOSS_THRESH = 0.05
-PERCENT_CUTOFF = 60
+PERCENT_CUTOFF = 80
 
 def add_lines(frame, lines, color):
     if lines is not None:
