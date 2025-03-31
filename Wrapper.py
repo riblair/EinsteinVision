@@ -69,8 +69,8 @@ def main():
     with open(args.Json_Name, 'w') as f:
         f.write(json.dumps(data_dictionary, indent=4))
 
-    # print("---Rendering images---")
-    # bs.
+    print("---Rendering images---")
+    bs.render_images(args.Json_Name, args.Outputs)
 
 if __name__ == '__main__':
     main()

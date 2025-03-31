@@ -1,6 +1,8 @@
 import bpy
 import bmesh
+import cv2
 import mathutils
+import os
 import numpy as np
 import json
 
@@ -13,7 +15,6 @@ def render_scene(scene, file_path):
     bpy.ops.render.render(write_still = 1)
 
 def obj_handler(pose_vector, euler_vector, blend_file):
-
     with bpy.data.libraries.load(blend_file, link=False) as (data_from, data_to):
         data_to.objects = [ name for name in data_from.objects if name not in ["Light", "Camera"]]
 
@@ -26,18 +27,18 @@ def obj_handler(pose_vector, euler_vector, blend_file):
     bpy.context.view_layer.update()
 
 def reset_scene():
+    bpy.ops.object.select_all(action='DESELECT')
     obj_dict = bpy.data.objects
     kept_objs = ["Camera", "Sun", "Light"]
-    for ob in bpy.context.scene.objects:
-        print(ob)
+    # for ob in bpy.context.scene.objects:
+    #     print(ob)
     for key in obj_dict:
         if key.name not in kept_objs:
-            print(key.name)
+            # print(key.name)
             obj = bpy.data.objects.get(key.name)
             if obj is not None:
                 obj.select_set(True)
                 bpy.ops.object.delete()
-                # unselect all...
 
 def render_images(json_filepath, output_dir):
     scene = bpy.context.scene
@@ -53,6 +54,8 @@ def render_images(json_filepath, output_dir):
     camera = bpy.data.objects.get("Camera")
     camera.location = mathutils.Vector(cam_location)
     camera.rotation_euler = mathutils.Euler(cam_euler)
+    bpy.context.view_layer.update()
+
     scene_list = data["Scenes"]
     for i in range(len(scene_list)):
         reset_scene()
@@ -64,5 +67,23 @@ def render_images(json_filepath, output_dir):
                             "Assets/Lane_Line.blend")
         render_scene(scene, f"{output_dir}image_{scene_list[i]['scene_num']}.png")
 
+def directory_to_video(output_dir):
+    # frame_list = []
+    filenames = os.listdir(output_dir)
+    filenames = [output_dir+filename for filename in filenames if filename[-4:] == ".png"]
+    # print(filenames)
+
+    filenames.sort(key=lambda x: int(x.split('_')[-1].split('.')[0])) 
+    output = cv2.VideoWriter( 
+        f"{output_dir}video.avi", cv2.VideoWriter_fourcc(*'X264'), 36, (1080, 1920)) 
+
+    for filename in filenames:
+        image = cv2.imread(filename)
+        print(filename)
+        print(image.shape)
+        output.write(image)
+    output.release()
+
 if __name__ == "__main__":
     main()
+    # directory_to_video("Output/")
