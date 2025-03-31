@@ -37,7 +37,7 @@ def main():
     traffic_sign_yolo = YOLO("best.pt", verbose=False)
 
     # rand_start = random.randint(250,700)
-    rand_start = 420
+    rand_start = 36*19
     scene_counter = 0
 
     data_dictionary = {
@@ -68,11 +68,12 @@ def main():
         localized_objects = []
         for detection in raw_detections:
             center_pixel = detection.center
-            depth = depth_image[int(center_pixel[0]),int(center_pixel[1])]
+            depth = depth_image[int(center_pixel[1]),int(center_pixel[0])]
             x = (center_pixel[0] - util.K_MAT[0,2]) / util.K_MAT[0,0]
             y = (center_pixel[1] - util.K_MAT[1,2]) / util.K_MAT[1,1]
             position = (np.array([x, y, 1]) * depth).reshape((3,1)) * 10
             position = util.WORLD__ROT @ position
+            position[2] = 0 if detection.class_id != 'traffic light' else position[2]
             zero_mat = np.array([[0], [0], [0]])
             pose = np.vstack((position, zero_mat))
             localized_objects.append(Object(detection, pose))
@@ -85,7 +86,7 @@ def main():
         }
         data_dictionary["Scenes"].append(objects_dict)
         # break
-        if scene_counter == rand_start+4:
+        if scene_counter == rand_start+2:
             break
 
     print("---Writing to Json---")

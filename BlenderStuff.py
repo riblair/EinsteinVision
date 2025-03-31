@@ -9,7 +9,7 @@ import json
 ASSETS = {
     "car": "Assets/Vehicles/SedanAndHatchback.blend",
     "truck": "Assets/Vehicles/Truck.blend",
-    "stop": "Assets/StopSign.blend",
+    "stop sign": "Assets/StopSign.blend",
     "person": "Assets/Pedestrain.blend",
     "traffic light": "Assets/TrafficSignal.blend",
     "motorcycle": "Assets/Vehicles/Motorcycle.blend",
@@ -33,8 +33,8 @@ def obj_handler(pose_vector, euler_vector, blend_file):
         print(obj.name)
         if obj.name not in ["Light", "Camera"]:
             bpy.context.collection.objects.link(obj)  # Link object to current scene
-            obj.location = pose_vector
-            obj.rotation_euler = euler_vector
+            obj.location = pose_vector + obj.location
+            # obj.rotation_euler = euler_vector
     bpy.context.view_layer.update()
 
 def reset_scene():

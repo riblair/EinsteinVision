@@ -12,6 +12,8 @@ import Utilities as util
 # Reject data that is too far away from detected lines
 # Implement some consistency between frames perhaps 
 
+# Handle Nonetype in 
+
 class Line():
     def __init__(self, x_offset):
         self.x_offset = x_offset
@@ -120,6 +122,8 @@ def pixels_to_world_points(depth_image, line_pixels):
 
     line_point_list = []
     for i in range(len(line_pixels)): 
+        if len(line_pixels[i]) == 0:
+            continue
         depths = np.array([depth_image[pixel[1], pixel[0]] for pixel in line_pixels[i]])
 
         # something about this seems very off. Def check this. 

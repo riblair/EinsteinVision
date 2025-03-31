@@ -6,15 +6,19 @@ import torch
 
 from Detection import *
 
+THRESHOLD = 0.6
+
 def get_detections_from_image(image: np.ndarray, models: list[YOLO]) -> list[Detection]:
     detections = []
     for model in models:
         results = model(image)
         for result in results:
             for box in result.boxes:
+                confidence = box.conf.numpy().flatten()[0]
+                # if confidence < THRESHOLD:
+                #     continue
                 class_id = model.names[int(box.cls)]
                 u1, v1, u2, v2 = box.xyxy.numpy().flatten()
-                confidence = box.conf.numpy().flatten()[0]
                 detection = Detection(class_id, confidence, np.array([u1, v1]), np.array([u2, v2]))
                 detections.append(detection)
     return detections
