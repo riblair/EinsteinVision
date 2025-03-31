@@ -116,6 +116,7 @@ def pixels_to_world_points(depth_image, line_pixels):
     # takes pixels from the lines - list of np.ndarrays with shape (Nx2) where N is number of points in line
     # TODO: This function is incomplete as the translation from pixel to world does not take into account the extriniscs
     # currently assumes camera extrinics are [np.eye(3) | np.zeros(3,1)]
+    # TODO: Make 2D -> 3D projection a generalized function in Utilities
 
     line_point_list = []
     for i in range(len(line_pixels)): 
@@ -124,11 +125,13 @@ def pixels_to_world_points(depth_image, line_pixels):
         # something about this seems very off. Def check this. 
         x_pix = (line_pixels[i][:, 0] - util.K_MAT[0,2]) / util.K_MAT[0,0]
         y_pix = (line_pixels[i][:, 1] - util.K_MAT[1,2]) / util.K_MAT[1,1]
+        # Nx3, where N is the number of pixels that make up the line in the image
         line_points = np.array([x_pix, y_pix,np.ones((x_pix.shape[0]))])
         line_points = line_points * depths # DEBUG
         # line_points = np.array([x_pix, y_pix,depths]).T
         line_point_list.append(line_points.T)
 
+    # MxNx3, where M is the number of detected lines. N is defined above.
     return line_point_list
 
 def get_ray_from_points(line_points_list): 
