@@ -10,7 +10,6 @@ def get_detections_from_image(image: np.ndarray, models: list[YOLO]) -> list[Det
     detections = []
     for model in models:
         results = model(image)
-        
         for result in results:
             for box in result.boxes:
                 class_id = model.names[int(box.cls)]
