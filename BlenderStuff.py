@@ -6,6 +6,17 @@ import os
 import numpy as np
 import json
 
+ASSETS = {
+    "car": "Assets/Vehicles/SedanAndHatchback.blend",
+    "truck": "Assets/Vehicles/Truck.blend",
+    "stop": "Assets/StopSign.blend",
+    "person": "Assets/Pedestrain.blend",
+    "traffic light": "Assets/TrafficSignal.blend",
+    "motorcycle": "Assets/Vehicles/Motorcycle.blend",
+    "bicycle": "Assets/Vehicles/Bicycle.blend",
+    "lane_line": "Assets/Lane_Line.blend"
+}
+
 def main():
     render_images("scenes.json", "Output/")
 
@@ -43,8 +54,9 @@ def reset_scene():
 def render_images(json_filepath, output_dir):
     scene = bpy.context.scene
 
-    bpy.ops.object.light_add(type='SUN', location=(0, 0, 10))
-    bpy.data.lights["Sun"].energy = 5  # Harnessing the full unmatched power of the sun
+    bpy.ops.object.light_add(type='SUN', location=(0, -2, 10))
+    bpy.data.lights["Sun"].energy = 10  # Harnessing the full unmatched power of the sun
+    scene.unit_settings.system = 'METRIC'
 
     with open(json_filepath, 'r') as fp:
         data = json.load(fp)
@@ -52,6 +64,7 @@ def render_images(json_filepath, output_dir):
     cam_location = data["camera_pose"][0:3]
     cam_euler = data["camera_pose"][3:]
     camera = bpy.data.objects.get("Camera")
+    # camera.matrix_basis = mathutils.Matrix.Translation(tuple(cam_location))
     camera.location = mathutils.Vector(cam_location)
     camera.rotation_euler = mathutils.Euler(cam_euler)
     bpy.context.view_layer.update()
@@ -61,10 +74,15 @@ def render_images(json_filepath, output_dir):
         reset_scene()
         objects = scene_list[i]['objects']
         for obj in objects:
-            if obj["type"] == "lane_line":
-                obj_handler(mathutils.Vector(obj["pose"][0:3]), 
-                            mathutils.Euler(obj["pose"][3:]), 
-                            "Assets/Lane_Line.blend")
+            if obj["type"] not in ASSETS:
+                continue
+            obj_handler(mathutils.Vector(obj["pose"][0:3]), 
+                        mathutils.Euler(obj["pose"][3:]), 
+                        ASSETS[obj["type"]])
+            # obj_handler(mathutils.Matrix.Translation(tuple(cam_location)), 
+            #             mathutils.Euler(obj["pose"][3:]), 
+            #             ASSETS[obj["type"]])
+            
         render_scene(scene, f"{output_dir}image_{scene_list[i]['scene_num']}.png")
 
 def directory_to_video(output_dir):

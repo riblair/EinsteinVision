@@ -1,6 +1,5 @@
 blender_venv/
 *.mp4
 __pycache__/*
-*.png
 cv2_demo.py
 Videos/

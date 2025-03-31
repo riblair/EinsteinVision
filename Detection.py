@@ -2,7 +2,7 @@ import numpy as np
 
 class Detection:
     def __init__(self, class_id: str, confidence: float, top_left: np.ndarray, bottom_right: np.ndarray):
-        self.class_id = class_id
+        self.class_id = class_id.lower()
         self.top_left = top_left
         # Casting to array for consistency with YOLO outputs
         self.width, self.height = bottom_right - top_left

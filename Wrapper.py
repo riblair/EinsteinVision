@@ -30,13 +30,14 @@ def main():
     args = env_setup()
     cap = cv2.VideoCapture(args.Scene) # scene 6 is a disaster...
     print("---Loading Model---")
-    torch.hub.help("intel-isl/MiDaS", "DPT_BEiT_L_384", force_reload=True)
+    # torch.hub.help("intel-isl/MiDaS", "DPT_BEiT_L_384", force_reload=True)
     device = "cuda" if torch.cuda.is_available() else "cpu"
     zoe = torch.hub.load("isl-org/ZoeDepth", "ZoeD_N", pretrained=True).to(device)
     general_yolo = YOLO("yolov8n", verbose=False)
     traffic_sign_yolo = YOLO("best.pt", verbose=False)
 
-    rand_start = random.randint(250,700)
+    # rand_start = random.randint(250,700)
+    rand_start = 420
     scene_counter = 0
 
     data_dictionary = {
@@ -67,11 +68,13 @@ def main():
         localized_objects = []
         for detection in raw_detections:
             center_pixel = detection.center
-            depth = depth_image[center_pixel]
+            depth = depth_image[int(center_pixel[0]),int(center_pixel[1])]
             x = (center_pixel[0] - util.K_MAT[0,2]) / util.K_MAT[0,0]
             y = (center_pixel[1] - util.K_MAT[1,2]) / util.K_MAT[1,1]
-            position = np.array([x, y, 1]) * depth
-            pose = np.append(position, [0,0,0]).T  #TODO: We don't need orientation yet. We will soon.
+            position = (np.array([x, y, 1]) * depth).reshape((3,1)) * 10
+            position = util.WORLD__ROT @ position
+            zero_mat = np.array([[0], [0], [0]])
+            pose = np.vstack((position, zero_mat))
             localized_objects.append(Object(detection, pose))
         object_list.extend(localized_objects)
             
@@ -81,7 +84,8 @@ def main():
             "objects" : [obj.to_json() for obj in object_list]
         }
         data_dictionary["Scenes"].append(objects_dict)
-        if scene_counter == rand_start+5:
+        # break
+        if scene_counter == rand_start+4:
             break
 
     print("---Writing to Json---")
