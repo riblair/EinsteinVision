@@ -4,8 +4,10 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 
+# graphing constants
 COLORS = ['Red','Green', 'Blue', 'Orange', 'Black']
 
+# Line Detection Constants 
 LOW_WHITE, HIGH_WHITE = 150, 255
 LOW_H, HIGH_H = 10, 80
 LOW_S, HIGH_S = 49,255
@@ -14,21 +16,43 @@ LOW_SIG, HIGH_SIG = 30,80
 
 MAX_CLUSTERS = 5
 
+# Camera Constants
 K_MAT = np.array([[1594.7,         0,    655.3],
                   [     0,    1607.7,    414.4],
                   [     0,         0,        1]])
 
-WORLD__ROT = np.array([[1, 0, 0],
-                        [0, 0, 1],
-                        [0, -1, 0]])
+WORLD_TO_CAM = np.array([[1,  0,  0],
+                         [0,  0,  -1],
+                         [0, 1,  0]])
+
+x_rad = -0.3
+X_ROT = np.array([[1, 0, 0],
+                  [0, math.cos(x_rad), -math.sin(x_rad)],
+                  [0, math.sin(x_rad), math.cos(x_rad)]])
+
+WORLD_TO_CAM_R = WORLD_TO_CAM @ X_ROT
+WORLD_TO_CAM_T = np.array([[0], [-1.9], [0]])
 
 HIGH_THETA = 1.8
 LOW_THETA = 1.4
 
-""" Ransac parameterr"""
+# RANSAC parameters
 MAX_ITER = 250
-LOSS_THRESH = 0.05
+LOSS_THRESH = 0.035
 PERCENT_CUTOFF = 80
+
+def pixel_arr_projection(pixel_arr: np.ndarray, depth_arr: np.ndarray) -> np.ndarray:
+    """ Projects an array of pixels into R3 using the static front camera transform
+        Args:
+            pixel_arr (np.ndarray): array of pixels, in shape SX3 [[u,v,1], [u,v,1], ...]
+            depth_arr (np.ndarray): array of depths for each pixel 
+        Returns:
+            world_points (np.ndarray): array of world coordinates w.r.t blender coordinate frame
+    """
+    camera_points = (np.linalg.inv(K_MAT) @ pixel_arr.T).T * depth_arr[:, np.newaxis]
+    # homogenous_camera_points = np.hstack((camera_points, np.ones((camera_points.shape[0], 1))))
+    world_points = (WORLD_TO_CAM_R.T @ camera_points.T).T - (WORLD_TO_CAM_R.T @ WORLD_TO_CAM_T).T
+    return world_points[:, :3] # DEBUG
 
 def add_lines(frame, lines, color):
     if lines is not None:
@@ -117,19 +141,28 @@ def show_line_points(line_points, ax_ref=None):
         ax.set_xlabel('X-Axis')
         ax.set_ylabel('Y-Axis')
         ax.set_zlabel('Z-Axis')
+        # ax.set_ylim((0,10))
+        # ax.set_xlim((-5,5))
+        # ax.set_zlim((-1, 5))
     else:
         ax = ax_ref
     for i in range(len(line_points)):
         ax.scatter(line_points[i][:,0],line_points[i][:,1],line_points[i][:,2], c=COLORS[i])
+    # plt.show()
 
-def visualize_stuff(frame, lines, depth_map):
+def show_depth_image(depth_map):
     def map_to_range(arr, min_val, max_val, new_min, new_max):
             return [new_min + (x - min_val) * (new_max - new_min) / (max_val - min_val) for x in arr]
-    frame = draw_lane_lines(frame, lines)
     remapped = map_to_range(depth_map, np.min(depth_map), np.max(depth_map), 0, 255)
     remapped = np.array(remapped, dtype=np.uint8)
-    cv2.imshow('frame', frame)
     cv2.imshow('depth', remapped)
+
+def visualize_stuff(frame, lines, depth_map):
+    
+    frame = draw_lane_lines(frame, lines)
+    show_depth_image(depth_map)
+    cv2.imshow('frame', frame)
+    
     cv2.waitKey(100)
     plt.show()
 
@@ -140,6 +173,7 @@ def show_direction_RANSAC(best_direction_list, best_inliers_list, line_origins =
     ax.set_ylabel('Y-Axis')
     ax.set_zlabel('Z-Axis')
     show_line_points(best_inliers_list, ax)
+    print(line_origins)
     for i in range(len(best_direction_list)):
         p0 = line_origins[i] if line_origins is not None else best_inliers_list[i][0]
         px = p0 + 5* best_direction_list[i]
