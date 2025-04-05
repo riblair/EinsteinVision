@@ -18,12 +18,41 @@ ASSETS = {
 }
 
 def main():
-    render_images("scenes.json", "Output/")
+    render_images("scenes.json", "Output/", "Videos/scene1_front.mp4", 469)
+
+def setup_scene():
+    scene = bpy.context.scene
+    scene.render.resolution_x = 1280
+    scene.render.resolution_y = 960
+    scene.render.resolution_percentage = 100 
+
+    # Make sure a world is assigned
+    if bpy.context.scene.world is None:
+        bpy.context.scene.world = bpy.data.worlds.new("World")
+
+    world = bpy.context.scene.world
+
+    # Use nodes (required for background color in Cycles and Eevee)
+    world.use_nodes = True
+    bg_node = world.node_tree.nodes.get("Background")
+    if bg_node:
+        bg_node.inputs[0].default_value = (0.1, 0.1, 0.1, 1.0)
+
+    bpy.ops.object.light_add(type='SUN', location=(0, -2, 10))
+    bpy.data.lights["Sun"].energy = 10  # Harnessing the full unmatched power of the sun
+    scene.unit_settings.system = 'METRIC'
+    bpy.context.scene.world.mist_settings.use_mist = False
+    return scene
 
 def render_scene(scene, file_path):
     scene.render.image_settings.file_format = 'PNG'
     scene.render.filepath = file_path
     bpy.ops.render.render(write_still = 1)
+
+def render_combined_frame(frame, raw_filename, combined_filename):
+    rendered_scene = cv2.imread(raw_filename)
+    combined_scene = np.hstack((frame, rendered_scene))
+    cv2.imwrite(combined_filename, combined_scene)
 
 def obj_handler(pose_vector, euler_vector, blend_file):
     with bpy.data.libraries.load(blend_file, link=False) as (data_from, data_to):
@@ -51,13 +80,12 @@ def reset_scene():
                 obj.select_set(True)
                 bpy.ops.object.delete()
 
-def render_images(json_filepath, output_dir):
-    scene = bpy.context.scene
+def render_images(json_filepath, output_dir, video_file, start_frame):
 
-    bpy.ops.object.light_add(type='SUN', location=(0, -2, 10))
-    bpy.data.lights["Sun"].energy = 10  # Harnessing the full unmatched power of the sun
-    scene.unit_settings.system = 'METRIC'
+    cap = cv2.VideoCapture(video_file)
+    cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
 
+    scene = setup_scene()
     with open(json_filepath, 'r') as fp:
         data = json.load(fp)
 
@@ -71,6 +99,7 @@ def render_images(json_filepath, output_dir):
 
     scene_list = data["Scenes"]
     for i in range(len(scene_list)):
+        ret, frame = cap.read() 
         reset_scene()
         objects = scene_list[i]['objects']
         for obj in objects:
@@ -79,29 +108,15 @@ def render_images(json_filepath, output_dir):
             obj_handler(mathutils.Vector(obj["pose"][0:3]), 
                         mathutils.Euler(obj["pose"][3:]), 
                         ASSETS[obj["type"]])
-            # obj_handler(mathutils.Matrix.Translation(tuple(cam_location)), 
-            #             mathutils.Euler(obj["pose"][3:]), 
-            #             ASSETS[obj["type"]])
             
-        render_scene(scene, f"{output_dir}image_{scene_list[i]['scene_num']}.png")
+        raw_filename = f"{output_dir}image_{scene_list[i]['scene_num']:05}.png"
+        combined_filename = f"{output_dir}Video/image_combined_{scene_list[i]['scene_num']:05}.png"
+        render_scene(scene, raw_filename)
+        render_combined_frame(frame, raw_filename, combined_filename)
 
 def directory_to_video(output_dir):
-    # frame_list = []
-    filenames = os.listdir(output_dir)
-    filenames = [output_dir+filename for filename in filenames if filename[-4:] == ".png"]
-    # print(filenames)
-
-    filenames.sort(key=lambda x: int(x.split('_')[-1].split('.')[0])) 
-    output = cv2.VideoWriter( 
-        f"{output_dir}video.avi", cv2.VideoWriter_fourcc(*'X264'), 36, (1080, 1920)) 
-
-    for filename in filenames:
-        image = cv2.imread(filename)
-        print(filename)
-        print(image.shape)
-        output.write(image)
-    output.release()
+    os.system("ffmpeg -framerate 36 -pattern_type glob -i 'Output/Video/image_combined_*.png' -c:v libx264 -pix_fmt yuv420p Output/Video/output.mp4")
 
 if __name__ == "__main__":
     main()
-    # directory_to_video("Output/")
+    directory_to_video("Output/Video/")

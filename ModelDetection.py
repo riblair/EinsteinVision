@@ -3,8 +3,11 @@ import cv2
 import numpy as np
 import random
 import torch
+import Utilities as util
 
 from Detection import *
+from Object import Object
+
 
 THRESHOLD = 0.6
 
@@ -22,6 +25,17 @@ def get_detections_from_image(image: np.ndarray, models: list[YOLO]) -> list[Det
                 detection = Detection(class_id, confidence, np.array([u1, v1]), np.array([u2, v2]))
                 detections.append(detection)
     return detections
+
+def detections_to_world(raw_detections: list[Detection], depth_image: np.ndarray) -> list[Object]:
+    localized_objects = []
+    for detection in raw_detections:
+        center_pixel = detection.center
+        depth = depth_image[int(center_pixel[1]),int(center_pixel[0])]
+        position = util.pixel_to_world(center_pixel, float(depth))
+        zero_mat = np.array([[0], [0], [0]])
+        pose = np.vstack((position, zero_mat))
+        localized_objects.append(Object(detection, pose))
+    return localized_objects
 
 def main():
     # NOTE: Temporary code to test functions in this file. Much of this logic can be written in main.py

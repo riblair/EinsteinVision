@@ -33,6 +33,8 @@ X_ROT = np.array([[1, 0, 0],
 WORLD_TO_CAM_R = WORLD_TO_CAM @ X_ROT
 WORLD_TO_CAM_T = np.array([[0], [-1.9], [0]])
 
+MAN_ADJUSTMENTS = np.array([])
+
 HIGH_THETA = 1.8
 LOW_THETA = 1.4
 
@@ -41,18 +43,28 @@ MAX_ITER = 250
 LOSS_THRESH = 0.035
 PERCENT_CUTOFF = 80
 
-def pixel_arr_projection(pixel_arr: np.ndarray, depth_arr: np.ndarray) -> np.ndarray:
+def pixel_arr_projection(pixel_arr: np.ndarray, depth_pixels: np.ndarray) -> np.ndarray:
     """ Projects an array of pixels into R3 using the static front camera transform
         Args:
             pixel_arr (np.ndarray): array of pixels, in shape SX3 [[u,v,1], [u,v,1], ...]
-            depth_arr (np.ndarray): array of depths for each pixel 
+            depth_pixels (np.ndarray): array of depths for each pixel 
         Returns:
             world_points (np.ndarray): array of world coordinates w.r.t blender coordinate frame
     """
-    camera_points = (np.linalg.inv(K_MAT) @ pixel_arr.T).T * depth_arr[:, np.newaxis]
+    camera_points = (np.linalg.inv(K_MAT) @ pixel_arr.T).T * depth_pixels[:, np.newaxis]
     # homogenous_camera_points = np.hstack((camera_points, np.ones((camera_points.shape[0], 1))))
     world_points = (WORLD_TO_CAM_R.T @ camera_points.T).T - (WORLD_TO_CAM_R.T @ WORLD_TO_CAM_T).T
-    return world_points[:, :3] # DEBUG
+    return world_points[:, :3] 
+
+def pixel_to_world(pixel: np.ndarray, depth: float):
+    homogenous_pixel = np.hstack((pixel, 1)).reshape((3,1)) # 3x1 
+    camera_point = (np.linalg.inv(K_MAT) @ homogenous_pixel) * depth # 
+    world_point = WORLD_TO_CAM_R.T @ camera_point - WORLD_TO_CAM_R @ WORLD_TO_CAM_T
+    world_point[0] *=10
+    world_point[1] *=10
+    world_point[2] -=2
+
+    return world_point
 
 def add_lines(frame, lines, color):
     if lines is not None:
@@ -150,17 +162,17 @@ def show_line_points(line_points, ax_ref=None):
         ax.scatter(line_points[i][:,0],line_points[i][:,1],line_points[i][:,2], c=COLORS[i])
     # plt.show()
 
-def show_depth_image(depth_map):
+def show_depth_image(depth_image):
     def map_to_range(arr, min_val, max_val, new_min, new_max):
             return [new_min + (x - min_val) * (new_max - new_min) / (max_val - min_val) for x in arr]
-    remapped = map_to_range(depth_map, np.min(depth_map), np.max(depth_map), 0, 255)
+    remapped = map_to_range(depth_image, np.min(depth_image), np.max(depth_image), 0, 255)
     remapped = np.array(remapped, dtype=np.uint8)
     cv2.imshow('depth', remapped)
 
-def visualize_stuff(frame, lines, depth_map):
+def visualize_stuff(frame, lines, depth_image):
     
     frame = draw_lane_lines(frame, lines)
-    show_depth_image(depth_map)
+    show_depth_image(depth_image)
     cv2.imshow('frame', frame)
     
     cv2.waitKey(100)

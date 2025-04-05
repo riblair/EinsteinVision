@@ -126,10 +126,10 @@ def pixels_to_world_points(depth_image, line_pixels):
     for i in range(len(line_pixels)): 
         if len(line_pixels[i]) == 0:
             continue
-        depths = np.array([depth_image[pixel[1], pixel[0]] for pixel in line_pixels[i]])
+        depth_pixels = np.array([depth_image[pixel[1], pixel[0]] for pixel in line_pixels[i]])
 
         homogenous_pixels = np.hstack((line_pixels[i], np.ones((line_pixels[i].shape[0],1))))
-        line_points = util.pixel_arr_projection(homogenous_pixels, depths)
+        line_points = util.pixel_arr_projection(homogenous_pixels, depth_pixels)
         line_point_list.append(line_points)
 
     # MxNx3, where M is the number of detected lines. N is defined above.
@@ -195,8 +195,8 @@ def get_line_objects(frame: np.ndarray, depth_image: np.ndarray, detections: lis
     for origin in line_origins:
         line_objs.append(Line(origin[0]))
     
-    util.show_direction_RANSAC(best_direction_list, best_inliers_list, line_origins)
-    util.visualize_stuff(frame, lines, depth_image)
+    # util.show_direction_RANSAC(best_direction_list, best_inliers_list, line_origins)
+    # util.visualize_stuff(frame, lines, depth_image)
     return line_objs
 
 def main():
