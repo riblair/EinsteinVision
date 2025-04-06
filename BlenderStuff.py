@@ -48,6 +48,7 @@ def render_scene(scene, file_path):
     scene.render.image_settings.file_format = 'PNG'
     scene.render.filepath = file_path
     bpy.ops.render.render(write_still = 1)
+    bpy.data.images.remove(bpy.data.images['Render Result']) # to prevent memory backup
 
 def render_combined_frame(frame, raw_filename, combined_filename):
     rendered_scene = cv2.imread(raw_filename)
@@ -68,18 +69,13 @@ def obj_handler(pose_vector, euler_vector, blend_file):
 
 def reset_scene():
     bpy.ops.object.select_all(action='DESELECT')
-    obj_dict = bpy.data.objects
     kept_objs = ["Camera", "Sun", "Light"]
-    # for ob in bpy.context.scene.objects:
-    #     print(ob)
-    for key in obj_dict:
-        if key.name not in kept_objs:
-            # print(key.name)
-            obj = bpy.data.objects.get(key.name)
-            if obj is not None:
-                obj.select_set(True)
-                bpy.ops.object.delete()
+    for obj in list(bpy.data.objects):
+        if obj.name not in kept_objs:
+            bpy.data.objects.remove(obj, do_unlink=True)
+    bpy.ops.outliner.orphans_purge(do_local_ids=True, do_linked_ids=True, do_recursive=True)
 
+# This loop ran out of memory (with 32g) after 782 images... 
 def render_images(json_filepath, output_dir, video_file, start_frame):
 
     cap = cv2.VideoCapture(video_file)
@@ -113,6 +109,7 @@ def render_images(json_filepath, output_dir, video_file, start_frame):
         combined_filename = f"{output_dir}Video/image_combined_{scene_list[i]['scene_num']:05}.png"
         render_scene(scene, raw_filename)
         render_combined_frame(frame, raw_filename, combined_filename)
+    cap.release()
 
 def directory_to_video(output_dir):
     os.system("ffmpeg -framerate 36 -pattern_type glob -i 'Output/Video/image_combined_*.png' -c:v libx264 -pix_fmt yuv420p Output/Video/output.mp4")

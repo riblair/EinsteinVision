@@ -34,7 +34,6 @@ def env_setup():
 # Med Priority: Traffic Sign Graphics
 # Low Priority: Objects (trafic cones, trashcans)
 # Low Priority: Improve Line Detection pipeline - See Line_Detection.py
-# background: Debug video from json
 
 def main():
     args = env_setup()
