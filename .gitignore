@@ -3,3 +3,6 @@ blender_venv/
 __pycache__/*
 cv2_demo.py
 Videos/
+Output/
+einsteinvenv/
+slurm_out/
