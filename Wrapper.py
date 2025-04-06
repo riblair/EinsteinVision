@@ -38,7 +38,8 @@ def env_setup():
 def main():
     args = env_setup()
     cap = cv2.VideoCapture(args.Scene) # scene 6 is a disaster...
-    rand_start = random.randint(250,700)
+    # rand_start = random.randint(250,700)
+    rand_start = 0
     cap.set(cv2.CAP_PROP_POS_FRAMES, rand_start)
     # rand_start = 36*19
     # rand_start = 496
@@ -84,8 +85,8 @@ def main():
         }
         data_dictionary["Scenes"].append(objects_dict)
         # break
-        if scene_counter == 3:
-            break
+        #if scene_counter == 3:
+        #    break
 
     print("---Writing to Json---")
     with open(args.Json_Name, 'w') as f:

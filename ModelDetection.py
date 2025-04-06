@@ -17,6 +17,7 @@ def get_detections_from_image(image: np.ndarray, models: list[YOLO]) -> list[Det
         results = model(image)
         for result in results:
             for box in result.boxes:
+                box = box.to('cpu')
                 confidence = box.conf.numpy().flatten()[0]
                 # if confidence < THRESHOLD:
                 #     continue
