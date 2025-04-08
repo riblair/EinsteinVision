@@ -5,3 +5,6 @@ __pycache__/*
 cv2_demo.py
 Videos/
 scenes.json
+Output/
+einsteinvenv/
+slurm_out/
