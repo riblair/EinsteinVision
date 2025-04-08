@@ -1,8 +1,11 @@
 import cv2
+import easyocr
 import json
 import math
 import matplotlib.pyplot as plt
 import numpy as np
+import torch
+from ultralytics import YOLO
 
 # graphing constants
 COLORS = ['Red','Green', 'Blue', 'Orange', 'Black']
@@ -39,9 +42,20 @@ HIGH_THETA = 1.8
 LOW_THETA = 1.4
 
 # RANSAC parameters
-MAX_ITER = 250
+MAX_ITER = 150
 LOSS_THRESH = 0.035
 PERCENT_CUTOFF = 80
+
+def load_models(model_path) -> dict:
+    models = dict([("objects", [])])
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    models["depth"] = torch.hub.load("isl-org/ZoeDepth", "ZoeD_N", pretrained=True).to(device)
+    models["objects"].append(YOLO(f"{model_path}general.pt", verbose=False).to(device))
+    models["objects"].append(YOLO(f"{model_path}traffic_signs1.pt", verbose=False).to(device))
+    # models["objects"].append(YOLO(f"{model_path}traffic_light_detection_ yolov8x_v3,5.pt", verbose=False).to(device))
+    models["OCR"] = easyocr.Reader(['en'])
+    # models["road_markings"] = YOLO(f"Models/road_markingsyolov8m.pt").to(device)
+    return models
 
 def pixel_arr_projection(pixel_arr: np.ndarray, depth_pixels: np.ndarray) -> np.ndarray:
     """ Projects an array of pixels into R3 using the static front camera transform

@@ -1,5 +1,7 @@
 blender_venv/
 *.mp4
+**.png
 __pycache__/*
 cv2_demo.py
 Videos/
+scenes.json

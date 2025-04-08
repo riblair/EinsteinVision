@@ -156,7 +156,7 @@ def get_ray_from_points(line_points_list):
                     inliers.append(point)
             if len(inliers) > len(best_inliers):
                 percentage = 100 * len(inliers)/len(line_points)
-                print(f"percentage of inliers found: {round(percentage,2)}%")
+                # print(f"percentage of inliers found: {round(percentage,2)}%")
                 best_inliers = inliers
                 best_direction = unit_d
                 if percentage > util.PERCENT_CUTOFF:
@@ -188,7 +188,7 @@ def get_line_objects(frame: np.ndarray, depth_image: np.ndarray, detections: lis
             return []
     line_pixels = find_points_on_line(lines, frame.shape[:2], obj_bitmask)
     line_points = pixels_to_world_points(depth_image, line_pixels)
-    util.show_line_points(line_points)
+    # util.show_line_points(line_points)
     best_direction_list, best_inliers_list = get_ray_from_points(line_points)
     line_origins = get_origins_from_points(best_direction_list, best_inliers_list)
     line_objs = []
