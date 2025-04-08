@@ -47,7 +47,7 @@ def main():
     print("---Loading Model---")
     # torch.hub.help("intel-isl/MiDaS", "DPT_BEiT_L_384", force_reload=True)
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    zoe = torch.hub.load("isl-org/ZoeDepth", "ZoeD_N", pretrained=True).to(device)
+    # zoe = torch.hub.load("isl-org/ZoeDepth", "ZoeD_N", pretrained=True).to(device)
     general_yolo = YOLO("yolov8n", verbose=False)
     traffic_sign_yolo = YOLO("best.pt", verbose=False)
 
@@ -67,23 +67,24 @@ def main():
         if not ret: # no more frames
             break
         # Can you parse more than one frame at a time through the model? 
-        depth_image = zoe.infer_pil(frame) # very slow :/
+        # depth_image = zoe.infer_pil(frame) # very slow :/
         print("---Detecting objects in scene---")
         # Run detection models on image to get Detection objects
         raw_detections = md.get_detections_from_image(frame, [general_yolo, traffic_sign_yolo])
+        md.visualize_detections(raw_detections, frame)
         print("---Detecting Lane_Lines---")
-        lane_line_list = ld.get_line_objects(frame, depth_image, raw_detections)
+        # lane_line_list = ld.get_line_objects(frame, depth_image, raw_detections)
 
-        localized_objects = md.detections_to_world(raw_detections, depth_image)
+        # localized_objects = md.detections_to_world(raw_detections, depth_image)
 
-        object_list.extend(lane_line_list)
-        object_list.extend(localized_objects)
+        # object_list.extend(lane_line_list)
+        # object_list.extend(localized_objects)
 
-        objects_dict = {
-            "scene_num": scene_counter+rand_start,
-            "objects" : [obj.to_json() for obj in object_list]
-        }
-        data_dictionary["Scenes"].append(objects_dict)
+        # objects_dict = {
+        #     "scene_num": scene_counter+rand_start,
+        #     "objects" : [obj.to_json() for obj in object_list]
+        # }
+        # data_dictionary["Scenes"].append(objects_dict)
         # break
         #if scene_counter == 3:
         #    break
