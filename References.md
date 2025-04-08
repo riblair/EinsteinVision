@@ -9,3 +9,6 @@ https://universe.roboflow.com/us-traffic-signs-pwkzx/us-road-signs
 
 https://github.com/isl-org/ZoeDepth 
 - ZoeDepth is a model that can extract metric depth from a single RGB image. We use this model to create a depth image from the given RGB images from the camera videos. The depth image is used to determine the 3D world coordinates of each detected object and lane line.
+
+https://github.com/JaidedAI/EasyOCR
+ - For labeling speed limits, we use an Optical Character Recognition model called EasyOCR. Once a sign is detected from the second yolo model, we read the characters on the sign and display them on top of a blank sign.  

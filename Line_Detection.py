@@ -208,7 +208,6 @@ def main():
     zoe = torch.hub.load("isl-org/ZoeDepth", "ZoeD_N", pretrained=True).to(device)
 
     rand_start = random.randint(250,700)
-    print(rand_start)
     counter = 0
     while True:
         # Read a frame from the video

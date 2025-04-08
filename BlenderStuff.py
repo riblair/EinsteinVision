@@ -82,6 +82,16 @@ def handle_traffic_light(pose_vector, blend_file, color):
     for obj in objects:
         if color not in obj.name and not "Traffic_signal" in obj.name:
             obj.hide_render = True # hide all non-lit lights
+        else:
+            print(f"{obj.name} being shown")
+    bpy.context.view_layer.update()
+
+def handle_road_sign(pose_vector, blend_file, text):
+    objects = load_objects(blend_file)
+    update_pose(objects, pose_vector)
+    for obj in objects:
+        if "Text" in obj.name:
+            obj.data.body = text
     bpy.context.view_layer.update()
 
 def reset_scene():
@@ -136,6 +146,8 @@ def render_images(json_filepath, output_dir, video_file, start_frame):
             
             if obj["type"] == "traffic light":
                 handle_traffic_light(obj["pose"],ASSETS[obj["type"]], obj["color"])
+            elif obj["type"] == "warning":
+                handle_road_sign(obj["pose"], ASSETS[obj["type"]], obj["speed_limit"])
             else:
                 handle_obj(obj["pose"], ASSETS[obj["type"]])
             

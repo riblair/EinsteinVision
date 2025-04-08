@@ -43,7 +43,7 @@ def refine_objects(image: np.ndarray, objects: list[Object], models: dict):
         if obj.original_detection.class_id == "warning":
             new_obj = SpeedSign.parse_speed_sign(image, models["OCR"], obj)
             refined.append(new_obj)
-        if obj.original_detection.class_id == "traffic light":
+        elif obj.original_detection.class_id == "traffic light":
             new_obj = TrafficLight.parse_traffic_light(image, obj)
             refined.append(new_obj)
             pass

@@ -15,7 +15,7 @@ class Object:
     
 
 class SpeedSign(Object):
-    def __init__(self, original_detection, pose, speed_limit:int):
+    def __init__(self, original_detection, pose, speed_limit:str):
         super().__init__(original_detection, pose)
         self.speed_limit = speed_limit
         
@@ -33,7 +33,7 @@ class SpeedSign(Object):
             if not result[1].isdigit(): continue # only add objects 
             # assuming that only 1 detection will be a number.
             print(f"Speed sign says {result[1]}")
-            return SpeedSign(obj.original_detection, obj.pose, int(result[1]))
+            return SpeedSign(obj.original_detection, obj.pose, result[1])
         
 class TrafficLight(Object):
     def __init__(self, original_detection, pose, color):
@@ -60,9 +60,9 @@ class TrafficLight(Object):
         dom_color = ""
 
         if(red_lum > green_lum):
-            dom_color = "red" if (red_lum > yellow_lum) else "yellow"
+            dom_color = "Red" if (red_lum > yellow_lum) else "Yellow"
         else:
-            dom_color = "green" if (green_lum > yellow_lum) else "yellow"
+            dom_color = "Green" if (green_lum > yellow_lum) else "Yellow"
         print(f"dominiant color is {dom_color}")
         return TrafficLight(obj.original_detection, obj.pose, dom_color)
     
