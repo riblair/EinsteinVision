@@ -68,6 +68,7 @@ def main():
         print("---Detecting objects in scene---")
         # Run detection models on image to get Detection objects
         raw_detections = md.get_detections_from_image(frame, model_dict["objects"])
+        md.visualize_detections(raw_detections, frame)
         print("---Detecting Lane_Lines---")
         lane_line_list = ld.get_line_objects(frame, depth_image, raw_detections)
 

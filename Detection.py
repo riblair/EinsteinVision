@@ -2,7 +2,7 @@ import numpy as np
 import cv2
 
 class Detection:
-    def __init__(self, class_id: str, confidence: float, top_left: np.ndarray, bottom_right: np.ndarray):
+    def __init__(self, class_id: str, confidence: float, top_left: np.ndarray, bottom_right: np.ndarray, keypoints = None):
         self.class_id = class_id.lower()
         self.top_left = top_left
         # Casting to array for consistency with YOLO outputs
@@ -11,6 +11,9 @@ class Detection:
         self.bottom_right = bottom_right
         self.confidence = confidence
 
+        self.keypoints = keypoints
+        self.facing_away = False
+        
     def get_crop(self, image:np.ndarray) -> np.ndarray:
         cropped_detection = image[int(self.top_left[1]):int(self.bottom_right[1]), 
                                   int(self.top_left[0]):int(self.bottom_right[0])]
