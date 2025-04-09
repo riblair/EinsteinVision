@@ -41,7 +41,7 @@ def main():
     cap = cv2.VideoCapture(args.Scene)
     if not cap.isOpened():
         raise RuntimeError("Error: Could not open video file.")
-    rand_start = 400
+    rand_start = 700
     cap.set(cv2.CAP_PROP_POS_FRAMES, rand_start)
     scene_counter = -1
 
@@ -91,9 +91,9 @@ def main():
     with open(args.Json_Name, 'w') as f:
         f.write(json.dumps(data_dictionary, indent=4))
 
-    print("---Rendering images---")
-    bs.render_images(args.Json_Name, args.Outputs, args.Scene, rand_start)
-    bs.directory_to_video(args.Outputs+"Video/")
+    # print("---Rendering images---")
+    # bs.render_images(args.Json_Name, args.Outputs, args.Scene, rand_start)
+    # bs.directory_to_video(args.Outputs+"Video/")
 
 if __name__ == '__main__':
     main()

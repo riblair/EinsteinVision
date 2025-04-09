@@ -1,5 +1,5 @@
 import cv2
-import easyocr
+# import easyocr
 import json
 import math
 import matplotlib.pyplot as plt
@@ -53,8 +53,8 @@ def load_models(model_path) -> dict:
     models["objects"].append(YOLO(f"{model_path}general.pt", verbose=False).to(device))
     models["objects"].append(YOLO(f"{model_path}traffic_signs1.pt", verbose=False).to(device))
     # models["objects"].append(YOLO(f"{model_path}traffic_light_detection_ yolov8x_v3,5.pt", verbose=False).to(device))
-    models["OCR"] = easyocr.Reader(['en'])
-    models["car_orient"] = YOLO(f"{model_path}CarSegmentation.pt", verbose=False).to(device)
+    # models["OCR"] = easyocr.Reader(['en'])
+    models["car_orient"] = YOLO(f"{model_path}CarOrientation.pt", verbose=False).to(device)
     models["human_pose"] = YOLO(f"{model_path}yolo11n-pose.pt", verbose=False).to(device)
     # models["road_markings"] = YOLO(f"Models/road_markingsyolov8m.pt").to(device)
     return models
@@ -206,3 +206,8 @@ def show_direction_RANSAC(best_direction_list, best_inliers_list, line_origins =
         p0 = line_origins[i] if line_origins is not None else best_inliers_list[i][0]
         px = p0 + 5* best_direction_list[i]
         ax.plot([float(p0[0]), float(px[0])], [float(p0[1]), float(px[1])], [float(p0[2]), float(px[2])], color=COLORS[i])
+        
+def three_point_angle_2D(point1, point2, point3):
+    vec1 = point1-point2
+    vec2 = point2-point3
+    return np.arccos(np.dot(vec1, vec2) / (np.linalg.norm(vec1)*np.linalg.norm(vec2)))
