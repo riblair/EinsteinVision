@@ -19,11 +19,14 @@ from Object import Object
 def env_setup():
     Parser = argparse.ArgumentParser()
     Parser.add_argument("--Scene", default="Videos/scene10_front.mp4", type=str, help="Path to video file. Default: 'scene1_front.mp4'")
+    Parser.add_argument("--Start", default="-1", type=int, help="Frame to start processing on")
     Parser.add_argument("--Json_Name", default="scenes.json", type=str, help="filename of the json object file. Default:'scenes.json'")
     Parser.add_argument("--Outputs", default="Output/", type=str, help="Path for rendered files. Default:'outputs/'")
+    Parser.add_argument("--Video_Name", default="output.mp4", type=str, help="Name of Output video.")
     Args = Parser.parse_args()
 
     os.makedirs(Args.Outputs, exist_ok=True)
+    os.makedirs(Args.Outputs+"Video/", exist_ok=True)
     return Args
 
 # TODO list:
@@ -41,7 +44,10 @@ def main():
     cap = cv2.VideoCapture(args.Scene)
     if not cap.isOpened():
         raise RuntimeError("Error: Could not open video file.")
-    rand_start = 800
+    if args.Start == -1:
+        rand_start = 650
+    else:
+        rand_start = args.Start
     cap.set(cv2.CAP_PROP_POS_FRAMES, rand_start)
     scene_counter = -1
 
@@ -68,7 +74,7 @@ def main():
         print("---Detecting objects in scene---")
         # Run detection models on image to get Detection objects
         raw_detections = md.get_detections_from_image(frame, model_dict["objects"])
-        md.visualize_detections(raw_detections, frame)
+        # md.visualize_detections(raw_detections, frame)
         print("---Detecting Lane_Lines---")
         lane_line_list = ld.get_line_objects(frame, depth_image, raw_detections)
 
@@ -84,16 +90,16 @@ def main():
         }
         data_dictionary["Scenes"].append(objects_dict)
         
-        if scene_counter >= 100:
+        if scene_counter >= 120:
             break
         
     print("---Writing to Json---")
     with open(args.Json_Name, 'w') as f:
         f.write(json.dumps(data_dictionary, indent=4))
 
-    # print("---Rendering images---")
-    # bs.render_images(args.Json_Name, args.Outputs, args.Scene, rand_start)
-    # bs.directory_to_video(args.Outputs+"Video/")
+    print("---Rendering images---")
+    bs.render_images(args.Json_Name, args.Outputs, args.Scene, rand_start)
+    bs.directory_to_video(args.Outputs+"Video/", args.Video_Name)
 
 if __name__ == '__main__':
     main()

@@ -77,7 +77,7 @@ def refine_objects(image: np.ndarray, objects: list[Object], models: dict):
         elif obj.original_detection.class_id == 'person':
             new_obj = Person.parse_person(image, obj, models["human_pose"])
             refined.append(new_obj)
-        elif obj.original_detection.class_id == 'car':
+        elif obj.original_detection.class_id == 'car' or obj.original_detection.class_id == 'truck':
             new_obj = Car.parse_car(image, obj, models["car_orient"])
             refined.append(new_obj)
         else:

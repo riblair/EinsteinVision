@@ -20,7 +20,8 @@ ASSETS = {
 
 # TODO, make this chunkable and run rendering in seperate processes...
 def main():
-    render_images("scenes.json", "Output/", "Videos/scene10_front.mp4", 400)
+    # render_images("scenes.json", "Output/", "Videos/scene10_front.mp4", 400)
+    directory_to_video("/home/riley/Desktop/computer_vision/EinsteinVision/Output7/", "scene7.mp4")
 
 
 def setup_scene():
@@ -193,8 +194,8 @@ def render_images(json_filepath, output_dir, video_file, start_frame):
         render_combined_frame(frame, raw_filename, combined_filename)
     cap.release()
 
-def directory_to_video(output_dir):
-    os.system(f"ffmpeg -framerate 36 -y -pattern_type glob -i 'Output/Video/image_combined_*.png' -c:v libx264 -pix_fmt yuv420p {output_dir}output.mp4")
+def directory_to_video(output_dir, video_name):
+    os.system(f"ffmpeg -framerate 6 -y -pattern_type glob -i '{output_dir}Video/image_combined_*.png' -c:v libx264 -pix_fmt yuv420p {output_dir}/Video/{video_name}")
 
 if __name__ == "__main__":
     main()

@@ -81,14 +81,14 @@ class Person(Object):
         
     def to_json(self):
         obj_dict = super().to_json()
-        obj_dict["LeftShoulder"] = self.left_shoulder
-        obj_dict["RightShoulder"] = self.right_shoulder
-        obj_dict["LeftElbow"] = self.left_elbow
-        obj_dict["RightElbow"] = self.right_elbow
-        obj_dict["LeftHip"] = self.left_hip
-        obj_dict["RightHip"] = self.right_hip
-        obj_dict["LeftKnee"] = self.left_knee
-        obj_dict["RightKnee"] = self.right_knee
+        obj_dict["LeftShoulder"] = float(self.left_shoulder)
+        obj_dict["RightShoulder"] = float(self.right_shoulder)
+        obj_dict["LeftElbow"] = float(self.left_elbow)
+        obj_dict["RightElbow"] = float(self.right_elbow)
+        obj_dict["LeftHip"] = float(self.left_hip)
+        obj_dict["RightHip"] = float(self.right_hip)
+        obj_dict["LeftKnee"] = float(self.left_knee)
+        obj_dict["RightKnee"] = float(self.right_knee)
         return obj_dict
     
     def extract_keypoints(self, image, pose_model):
@@ -156,12 +156,18 @@ class Person(Object):
 class Car(Object):
     def __init__(self, original_detection, pose, direction):
         super().__init__(original_detection, pose)
-        self.direction = "back"
+        self.direction = direction
+
+    def to_json(self):
+        obj_dict = super().to_json()
+        obj_dict["direction"] = self.direction
+        return obj_dict
     
     @classmethod
     def parse_car(cls, image, obj: Object, orientation_model):
         patch = obj.original_detection.get_crop(image)
         result = orientation_model(patch)[0]
+        side = "back"
         for box in result.boxes:
             box = box.to('cpu')
             confidence = box.conf.numpy().flatten()[0]
@@ -169,4 +175,4 @@ class Car(Object):
         return Car(obj.original_detection, obj.pose, side)
             
             
-            
+        
