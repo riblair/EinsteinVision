@@ -59,13 +59,13 @@ def visualize_detections(raw_detections: list[Detection], image):
         cv2.putText(image, detection.class_id, np.uint16(detection.top_left)+10, cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.5, (255, 0, 0), 1)
         cv2.putText(image, str(detection.confidence), np.uint16(detection.top_left)+20, cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.5, (255, 0, 0), 1)
     cv2.imshow("", image)
-    if cv2.waitKey(1) == ord('q'):
+    if cv2.waitKey(30) == ord('q'):
         return
 
 def refine_objects(image: np.ndarray, objects: list[Object], models: dict):
     refined = []
     for obj in objects:
-        print(obj.original_detection.class_id)
+        # print(obj.original_detection.class_id)
         if obj.original_detection.class_id == "warning":
             new_obj = SpeedSign.parse_speed_sign(image, models["OCR"], obj)
             refined.append(new_obj)

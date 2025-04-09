@@ -10,7 +10,7 @@ ASSETS = {
     "car": "Assets/Vehicles/SedanAndHatchback.blend",
     "truck": "Assets/Vehicles/Truck.blend",
     "stop sign": "Assets/StopSign.blend",
-    "person": "Assets/Pedestrain.blend",
+    "person": "Assets/Human.blend",
     "traffic light": "Assets/TrafficSignal.blend",
     "motorcycle": "Assets/Vehicles/Motorcycle.blend",
     "bicycle": "Assets/Vehicles/Bicycle.blend",
@@ -63,18 +63,21 @@ def load_objects(blend_file):
         data_to.objects = [ name for name in data_from.objects if name not in ["Light", "Camera"]]
     return data_to.objects
 
+# FOR Rigid Bodies only where all objects need to move and rotate by the same angles
 def update_pose(objects, pose):
     position = mathutils.Vector(pose[0:3])
-    rotation = mathutils.Euler(pose[3:])
     for obj in objects:
         bpy.context.collection.objects.link(obj)  # Link object to current scene
         obj.location = position + obj.location
-        # obj.rotation_euler = obj.rotation_euler
+        rotation = obj.rotation_euler
+        rotation.rotate_axis('X', pose[3])
+        rotation.rotate_axis('Y', pose[4])
+        rotation.rotate_axis('Z', pose[5])
+        obj.rotation_euler = rotation
 
 def handle_obj(pose_vector, blend_file):
     objects = load_objects(blend_file)
     update_pose(objects, pose_vector)
-    bpy.context.view_layer.update()
 
 def handle_traffic_light(pose_vector, blend_file, color):
     objects = load_objects(blend_file)
@@ -82,9 +85,6 @@ def handle_traffic_light(pose_vector, blend_file, color):
     for obj in objects:
         if color not in obj.name and not "Traffic_signal" in obj.name:
             obj.hide_render = True # hide all non-lit lights
-        else:
-            print(f"{obj.name} being shown")
-    bpy.context.view_layer.update()
 
 def handle_road_sign(pose_vector, blend_file, text):
     objects = load_objects(blend_file)
@@ -92,7 +92,38 @@ def handle_road_sign(pose_vector, blend_file, text):
     for obj in objects:
         if "Text" in obj.name:
             obj.data.body = text
-    bpy.context.view_layer.update()
+
+def handle_pedestrian(pose_vector, blend_file, joint_dict):
+    objects = load_objects(blend_file)
+    for obj in objects:
+        if "Pelvis" in obj.name:
+            update_pose([obj], pose_vector)
+        elif "RightShoulder" in obj.name:
+            obj.rotation_euler.rotate_axis('Y', joint_dict["RightShoulder"])
+        elif "RightElbow" in obj.name:
+            obj.rotation_euler.rotate_axis('Z', joint_dict["RightElbow"])
+        elif "RightHip" in obj.name:
+            obj.rotation_euler.rotate_axis('X', joint_dict["RightHip"])
+        elif "RightKnee" in obj.name:
+            obj.rotation_euler.rotate_axis('X', joint_dict["RightKnee"])
+        elif "LeftShoulder" in obj.name:
+            obj.rotation_euler.rotate_axis('Y', joint_dict["LeftShoulder"])
+        elif "LeftElbow" in obj.name:
+            obj.rotation_euler.rotate_axis('Z', joint_dict["LeftElbow"])
+        elif "LeftHip" in obj.name:
+            obj.rotation_euler.rotate_axis('X', joint_dict["LeftHip"])
+        elif "LeftKnee" in obj.name:
+            obj.rotation_euler.rotate_axis('X', joint_dict["LeftKnee"])
+
+def handle_vehicle(pose_vector, blend_file, direction):
+    objects = load_objects(blend_file)
+    if direction == "front":
+        pose_vector[5] = np.pi
+    elif direction == "left": 
+        pose_vector[5] = np.pi/2
+    elif direction == "right": 
+        pose_vector[5] = -np.pi/2
+    update_pose(objects, pose_vector)
 
 def reset_scene():
     bpy.ops.object.select_all(action='DESELECT')
@@ -145,11 +176,16 @@ def render_images(json_filepath, output_dir, video_file, start_frame):
                 continue
             
             if obj["type"] == "traffic light":
-                handle_traffic_light(obj["pose"],ASSETS[obj["type"]], obj["color"])
+                handle_traffic_light(obj["pose"], ASSETS[obj["type"]], obj["color"])
             elif obj["type"] == "warning":
                 handle_road_sign(obj["pose"], ASSETS[obj["type"]], obj["speed_limit"])
+            elif obj["type"] == "person":
+                handle_pedestrian(obj["pose"], ASSETS[obj["type"]], obj["joint_dict"])
+            elif obj["type"] == "car" or obj["type"] == "truck":
+                handle_vehicle(obj["pose"], ASSETS[obj["type"]], obj["direction"])
             else:
                 handle_obj(obj["pose"], ASSETS[obj["type"]])
+            bpy.context.view_layer.update()
             
         raw_filename = f"{output_dir}image_{scene_list[i]['scene_num']:05}.png"
         combined_filename = f"{output_dir}Video/image_combined_{scene_list[i]['scene_num']:05}.png"
@@ -158,7 +194,7 @@ def render_images(json_filepath, output_dir, video_file, start_frame):
     cap.release()
 
 def directory_to_video(output_dir):
-    os.system("ffmpeg -framerate 36 -pattern_type glob -i 'Output/Video/image_combined_*.png' -c:v libx264 -pix_fmt yuv420p Output/Video/output.mp4")
+    os.system(f"ffmpeg -framerate 36 -y -pattern_type glob -i 'Output/Video/image_combined_*.png' -c:v libx264 -pix_fmt yuv420p {output_dir}output.mp4")
 
 if __name__ == "__main__":
     main()

@@ -41,7 +41,7 @@ def main():
     cap = cv2.VideoCapture(args.Scene)
     if not cap.isOpened():
         raise RuntimeError("Error: Could not open video file.")
-    rand_start = 400
+    rand_start = 800
     cap.set(cv2.CAP_PROP_POS_FRAMES, rand_start)
     scene_counter = -1
 
@@ -84,7 +84,7 @@ def main():
         }
         data_dictionary["Scenes"].append(objects_dict)
         
-        if scene_counter >= 30:
+        if scene_counter >= 100:
             break
         
     print("---Writing to Json---")
