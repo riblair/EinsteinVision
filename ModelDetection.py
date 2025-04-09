@@ -5,7 +5,7 @@ import copy
 
 import Utilities as util
 from Detection import *
-from Object import Object, SpeedSign, TrafficLight
+from Object import Object, SpeedSign, TrafficLight, Person, Car
 
 
 THRESHOLD = 0.5
@@ -67,12 +67,19 @@ def refine_objects(image: np.ndarray, objects: list[Object], models: dict):
     for obj in objects:
         # print(obj.original_detection.class_id)
         if obj.original_detection.class_id == "warning":
-            new_obj = SpeedSign.parse_speed_sign(image, models["OCR"], obj)
-            refined.append(new_obj)
+            # new_obj = SpeedSign.parse_speed_sign(image, models["OCR"], obj)
+            # refined.append(new_obj)
+            pass
         elif obj.original_detection.class_id == "traffic light":
             new_obj = TrafficLight.parse_traffic_light(image, obj)
             refined.append(new_obj)
             pass
+        elif obj.original_detection.class_id == 'person':
+            new_obj = Person.parse_person(image, obj, models["human_pose"])
+            refined.append(new_obj)
+        elif obj.original_detection.class_id == 'car':
+            new_obj = Car.parse_car(image, obj, models["car_orient"])
+            refined.append(new_obj)
         else:
             refined.append(obj)
     return refined
