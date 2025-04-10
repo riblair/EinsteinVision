@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from ultralytics import YOLO
+from pathlib import Path
 
 # graphing constants
 COLORS = ['Red','Green', 'Blue', 'Orange', 'Black']
@@ -51,7 +52,7 @@ def load_models(model_path) -> dict:
     models["depth"] = torch.hub.load("isl-org/ZoeDepth", "ZoeD_N", pretrained=True).to(device)
     models["objects"].append(YOLO(f"{model_path}general.pt", verbose=False).to(device))
     models["objects"].append(YOLO(f"{model_path}traffic_signs1.pt", verbose=False).to(device))
-    models["OCR"] = easyocr.Reader(['en'])
+    models["OCR"] = easyocr.Reader(['en'], model_storage_directory="~/.EasyOCR/model", user_network_directory="~/.EasyOCR/user_network")
     models["car_orient"] = YOLO(f"{model_path}classification.pt", verbose=False).to(device)
     models["human_pose"] = YOLO(f"{model_path}yolo11n-pose.pt", verbose=False).to(device)
     return models
