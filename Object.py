@@ -81,14 +81,18 @@ class Person(Object):
         
     def to_json(self):
         obj_dict = super().to_json()
-        obj_dict["LeftShoulder"] = float(self.left_shoulder)
-        obj_dict["RightShoulder"] = float(self.right_shoulder)
-        obj_dict["LeftElbow"] = float(self.left_elbow)
-        obj_dict["RightElbow"] = float(self.right_elbow)
-        obj_dict["LeftHip"] = float(self.left_hip)
-        obj_dict["RightHip"] = float(self.right_hip)
-        obj_dict["LeftKnee"] = float(self.left_knee)
-        obj_dict["RightKnee"] = float(self.right_knee)
+
+        joint_dict = dict()
+        joint_dict["LeftShoulder"] = float(self.left_shoulder)
+        joint_dict["RightShoulder"] = float(self.right_shoulder)
+        joint_dict["LeftElbow"] = float(self.left_elbow)
+        joint_dict["RightElbow"] = float(self.right_elbow)
+        joint_dict["LeftHip"] = float(self.left_hip)
+        joint_dict["RightHip"] = float(self.right_hip)
+        joint_dict["LeftKnee"] = float(self.left_knee)
+        joint_dict["RightKnee"] = float(self.right_knee)
+        
+        obj_dict["joint_dict"] = joint_dict
         return obj_dict
     
     def extract_keypoints(self, image, pose_model):

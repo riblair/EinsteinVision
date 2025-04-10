@@ -48,6 +48,8 @@ def detections_to_world(raw_detections: list[Detection], depth_image: np.ndarray
         center_pixel = detection.center
         depth = depth_image[int(center_pixel[1]),int(center_pixel[0])]
         position = util.pixel_to_world(center_pixel, float(depth))
+        if detection.class_id == "traffic light":
+            position[2]*=5
         zero_mat = np.array([[0], [0], [0]])
         pose = np.vstack((position, zero_mat))
         localized_objects.append(Object(detection, pose))

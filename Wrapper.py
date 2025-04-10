@@ -20,7 +20,7 @@ def env_setup():
     Parser = argparse.ArgumentParser()
     Parser.add_argument("--Scene", default="Videos/scene10_front.mp4", type=str, help="Path to video file. Default: 'scene1_front.mp4'")
     Parser.add_argument("--Start", default="-1", type=int, help="Frame to start processing on")
-    Parser.add_argument("--Json_Name", default="scenes.json", type=str, help="filename of the json object file. Default:'scenes.json'")
+    Parser.add_argument("--Json_Name", default="Scenes/scenes.json", type=str, help="filename of the json object file. Default:'scenes.json'")
     Parser.add_argument("--Outputs", default="Output/", type=str, help="Path for rendered files. Default:'outputs/'")
     Parser.add_argument("--Video_Name", default="output.mp4", type=str, help="Name of Output video.")
     Args = Parser.parse_args()
@@ -45,7 +45,7 @@ def main():
     if not cap.isOpened():
         raise RuntimeError("Error: Could not open video file.")
     if args.Start == -1:
-        rand_start = 650
+        rand_start = 860
     else:
         rand_start = args.Start
     cap.set(cv2.CAP_PROP_POS_FRAMES, rand_start)
@@ -77,11 +77,11 @@ def main():
         # md.visualize_detections(raw_detections, frame)
         print("---Detecting Lane_Lines---")
         lane_line_list = ld.get_line_objects(frame, depth_image, raw_detections)
+        object_list.extend(lane_line_list)
 
         localized_objects = md.detections_to_world(raw_detections, depth_image)
         refined_objects = md.refine_objects(frame, localized_objects, model_dict)
 
-        object_list.extend(lane_line_list)
         object_list.extend(refined_objects)
 
         objects_dict = {
@@ -90,7 +90,7 @@ def main():
         }
         data_dictionary["Scenes"].append(objects_dict)
         
-        if scene_counter >= 120:
+        if scene_counter >= 180:
             break
         
     print("---Writing to Json---")

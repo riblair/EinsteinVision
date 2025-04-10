@@ -20,8 +20,8 @@ ASSETS = {
 
 # TODO, make this chunkable and run rendering in seperate processes...
 def main():
-    # render_images("scenes.json", "Output/", "Videos/scene10_front.mp4", 400)
-    directory_to_video("/home/riley/Desktop/computer_vision/EinsteinVision/Output7/", "scene7.mp4")
+    render_images("scenes.json", "Output/", "Videos/scene10_front.mp4", 650)
+    # directory_to_video("/home/riley/Desktop/computer_vision/EinsteinVision/Output7/", "scene7.mp4")
 
 
 def setup_scene():
@@ -61,9 +61,22 @@ def render_combined_frame(frame, raw_filename, combined_filename):
 
 def load_objects(blend_file):
     with bpy.data.libraries.load(blend_file, link=False) as (data_from, data_to):
-        data_to.objects = [ name for name in data_from.objects if name not in ["Light", "Camera"]]
+        data_to.objects = [ name for name in data_from.objects if name not in ["Light", "Camera", "Sun"]]
     return data_to.objects
 
+def append_human_model(blend_path):
+
+    pre_objects = set(bpy.data.objects)
+    bpy.ops.wm.append(
+    filepath="/home/riley/Desktop/computer_vision/EinsteinVision/Assets/Human.blend",
+    directory="/home/riley/Desktop/computer_vision/EinsteinVision/Assets/Human.blend/Collection/",
+    filename="Body")
+
+    post_objects = set(bpy.data.objects)
+    new_objects = post_objects - pre_objects
+    return list(new_objects)
+
+# bpy.ops.object.make_local(type='ALL')
 # FOR Rigid Bodies only where all objects need to move and rotate by the same angles
 def update_pose(objects, pose):
     position = mathutils.Vector(pose[0:3])
@@ -95,7 +108,7 @@ def handle_road_sign(pose_vector, blend_file, text):
             obj.data.body = text
 
 def handle_pedestrian(pose_vector, blend_file, joint_dict):
-    objects = load_objects(blend_file)
+    objects = append_human_model(blend_file)
     for obj in objects:
         if "Pelvis" in obj.name:
             update_pose([obj], pose_vector)
@@ -175,7 +188,6 @@ def render_images(json_filepath, output_dir, video_file, start_frame):
         for obj in objects:
             if obj["type"] not in ASSETS:
                 continue
-            
             if obj["type"] == "traffic light":
                 handle_traffic_light(obj["pose"], ASSETS[obj["type"]], obj["color"])
             elif obj["type"] == "warning":
@@ -195,8 +207,7 @@ def render_images(json_filepath, output_dir, video_file, start_frame):
     cap.release()
 
 def directory_to_video(output_dir, video_name):
-    os.system(f"ffmpeg -framerate 6 -y -pattern_type glob -i '{output_dir}Video/image_combined_*.png' -c:v libx264 -pix_fmt yuv420p {output_dir}/Video/{video_name}")
+    os.system(f"ffmpeg -framerate 6 -y -pattern_type glob -i '{output_dir}image_combined_*.png' -c:v libx264 -pix_fmt yuv420p {output_dir}/Video/{video_name}")
 
 if __name__ == "__main__":
     main()
-    

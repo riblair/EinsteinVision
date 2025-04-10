@@ -1,6 +1,5 @@
 import cv2
-# import easyocr
-import json
+import easyocr
 import math
 import matplotlib.pyplot as plt
 import numpy as np
@@ -52,11 +51,9 @@ def load_models(model_path) -> dict:
     models["depth"] = torch.hub.load("isl-org/ZoeDepth", "ZoeD_N", pretrained=True).to(device)
     models["objects"].append(YOLO(f"{model_path}general.pt", verbose=False).to(device))
     models["objects"].append(YOLO(f"{model_path}traffic_signs1.pt", verbose=False).to(device))
-    # models["objects"].append(YOLO(f"{model_path}traffic_light_detection_ yolov8x_v3,5.pt", verbose=False).to(device))
-    # models["OCR"] = easyocr.Reader(['en'])
+    models["OCR"] = easyocr.Reader(['en'])
     models["car_orient"] = YOLO(f"{model_path}CarOrientation.pt", verbose=False).to(device)
     models["human_pose"] = YOLO(f"{model_path}yolo11n-pose.pt", verbose=False).to(device)
-    # models["road_markings"] = YOLO(f"Models/road_markingsyolov8m.pt").to(device)
     return models
 
 def pixel_arr_projection(pixel_arr: np.ndarray, depth_pixels: np.ndarray) -> np.ndarray:
