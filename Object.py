@@ -170,12 +170,15 @@ class Car(Object):
     @classmethod
     def parse_car(cls, image, obj: Object, orientation_model):
         patch = obj.original_detection.get_crop(image)
-        result = orientation_model(patch)[0]
-        side = "back"
-        for box in result.boxes:
-            box = box.to('cpu')
-            confidence = box.conf.numpy().flatten()[0]
-            side = orientation_model.names[int(box.cls)]
+        results = orientation_model(patch)
+        predicted_class = results[0].names[results[0].probs.top1]
+        print(f"CAR ORIENTATION DETECTED: {predicted_class}")
+        side = predicted_class
+        # side = "back"
+        # for box in result.boxes:
+        #     box = box.to('cpu')
+        #     confidence = box.conf.numpy().flatten()[0]
+        #     side = orientation_model.names[int(box.cls)]
         return Car(obj.original_detection, obj.pose, side)
             
             

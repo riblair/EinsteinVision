@@ -66,10 +66,12 @@ def load_objects(blend_file):
 
 def append_human_model(blend_path):
 
+    absolute_path = os.path.abspath(blend_path)
+
     pre_objects = set(bpy.data.objects)
     bpy.ops.wm.append(
-    filepath="/home/riley/Desktop/computer_vision/EinsteinVision/Assets/Human.blend",
-    directory="/home/riley/Desktop/computer_vision/EinsteinVision/Assets/Human.blend/Collection/",
+    filepath=f"{absolute_path}",
+    directory=f"{absolute_path}/Collection/",
     filename="Body")
 
     post_objects = set(bpy.data.objects)

@@ -52,7 +52,7 @@ def load_models(model_path) -> dict:
     models["objects"].append(YOLO(f"{model_path}general.pt", verbose=False).to(device))
     models["objects"].append(YOLO(f"{model_path}traffic_signs1.pt", verbose=False).to(device))
     models["OCR"] = easyocr.Reader(['en'])
-    models["car_orient"] = YOLO(f"{model_path}CarOrientation.pt", verbose=False).to(device)
+    models["car_orient"] = YOLO(f"{model_path}classification.pt", verbose=False).to(device)
     models["human_pose"] = YOLO(f"{model_path}yolo11n-pose.pt", verbose=False).to(device)
     return models
 
