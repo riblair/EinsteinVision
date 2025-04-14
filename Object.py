@@ -158,13 +158,17 @@ class Person(Object):
         return new_obj
 
 class Car(Object):
-    def __init__(self, original_detection, pose, direction):
+    def __init__(self, original_detection, pose, direction, light_arr, is_parked):
         super().__init__(original_detection, pose)
         self.direction = direction
+        self.light_arr = light_arr
+        self.is_parked = is_parked
 
     def to_json(self):
         obj_dict = super().to_json()
         obj_dict["direction"] = self.direction
+        obj_dict["light_array"] = self.light_arr
+        obj_dict["is_parked"] = int(self.is_parked)
         return obj_dict
     
     @classmethod
@@ -174,12 +178,22 @@ class Car(Object):
         predicted_class = results[0].names[results[0].probs.top1]
         print(f"CAR ORIENTATION DETECTED: {predicted_class}")
         side = predicted_class
-        # side = "back"
-        # for box in result.boxes:
-        #     box = box.to('cpu')
-        #     confidence = box.conf.numpy().flatten()[0]
-        #     side = orientation_model.names[int(box.cls)]
-        return Car(obj.original_detection, obj.pose, side)
+        light_vals = util.thresh_headlights(patch)
+        light_arr = [0] * 4 #fl, fr, bl, br
+        if side == "back":
+            light_arr[2:4] = light_vals
+        elif side == "front":
+            light_arr[:2] = light_vals
+        elif side == "left":
+            light_arr[0] = light_vals[0]
+            light_arr[2] = light_vals[1]
+        else:
+            light_arr[1] = light_vals[0]
+            light_arr[3] = light_vals[1]
+
+        # TODO: Figure this out
+        is_parked = False
+        return Car(obj.original_detection, obj.pose, side, light_arr, is_parked)
             
             
         

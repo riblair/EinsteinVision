@@ -131,7 +131,7 @@ def handle_pedestrian(pose_vector, blend_file, joint_dict):
         elif "LeftKnee" in obj.name:
             obj.rotation_euler.rotate_axis('X', joint_dict["LeftKnee"])
 
-def handle_vehicle(pose_vector, blend_file, direction):
+def handle_vehicle(pose_vector, blend_file, direction, lights, is_parked):
     objects = load_objects(blend_file)
     if direction == "front":
         pose_vector[5] = np.pi
@@ -140,6 +140,20 @@ def handle_vehicle(pose_vector, blend_file, direction):
     elif direction == "right": 
         pose_vector[5] = -np.pi/2
     update_pose(objects, pose_vector)
+
+    vehicle_color = (0.8, 0.8, 0.8, 1) if not is_parked else (0.2, 0.2, 0.2, 1) 
+
+    for obj in objects:
+        if "Front_Left_Light" in obj.name:
+            obj.hide_render = False if lights[0] else True
+        elif "Front_Right_Light" in obj.name:
+            obj.hide_render = False if lights[1] else True
+        elif "Back_Left_Light" in obj.name:
+            obj.hide_render = False if lights[2] else True
+        elif "Back_Right_Light" in obj.name:
+            obj.hide_render = False if lights[3] else True
+        elif "Vehicle" in obj.name:
+            obj.active_material.node_tree.nodes["Principled BSDF"].inputs[0].default_value = vehicle_color
 
 def reset_scene():
     bpy.ops.object.select_all(action='DESELECT')
@@ -197,7 +211,7 @@ def render_images(json_filepath, output_dir, video_file, start_frame):
             elif obj["type"] == "person":
                 handle_pedestrian(obj["pose"], ASSETS[obj["type"]], obj["joint_dict"])
             elif obj["type"] == "car" or obj["type"] == "truck":
-                handle_vehicle(obj["pose"], ASSETS[obj["type"]], obj["direction"])
+                handle_vehicle(obj["pose"], ASSETS[obj["type"]], obj["direction"], obj["light_array"], obj["is_parked"])
             else:
                 handle_obj(obj["pose"], ASSETS[obj["type"]])
             bpy.context.view_layer.update()

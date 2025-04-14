@@ -1,3 +1,4 @@
+import copy
 import cv2
 import easyocr
 import math
@@ -208,3 +209,45 @@ def three_point_angle_2D(point1, point2, point3):
     vec1 = point1-point2
     vec2 = point2-point3
     return np.arccos(np.dot(vec1, vec2) / (np.linalg.norm(vec1)*np.linalg.norm(vec2)))
+
+
+x_offset = 90
+y_offset = 70
+vert_offset = 20
+
+tl_l = (0,              y_offset-vert_offset)
+tr_l = (x_offset,       y_offset-vert_offset)
+bl_l = (0,          255-y_offset-vert_offset)
+br_l = (x_offset,   255-y_offset-vert_offset)
+
+tl_r = (255-x_offset,       y_offset-vert_offset)
+tr_r = (255,                y_offset-vert_offset)
+bl_r = (255-x_offset,   255-y_offset-vert_offset)
+br_r = (255,            255-y_offset-vert_offset)
+
+HEAD_LIGHT_THRESH = 0.8
+
+def thresh_headlights(image: np.ndarray) -> list:
+    image = cv2.resize(image, (256, 256))
+    left_mask = np.zeros(image.shape[:2], np.uint8)
+    cv2.rectangle(left_mask, tl_l, br_l, 255, -1)
+
+    right_mask = np.zeros(image.shape[:2], np.uint8)
+    cv2.rectangle(right_mask, tl_r, br_r, 255, -1)
+    
+    frame_HSV = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    frame_threshold = cv2.inRange(frame_HSV, (0, 0, 196), (26, 61, 255))
+    frame_threshold = cv2.erode(frame_threshold, cv2.getStructuringElement(cv2.MORPH_RECT,(5,5)))
+    frame_threshold = cv2.dilate(frame_threshold, cv2.getStructuringElement(cv2.MORPH_RECT,(5,5)))
+    frame_threshold_left = cv2.bitwise_and(copy.deepcopy(frame_threshold), left_mask)
+    frame_threshold_right = cv2.bitwise_and(copy.deepcopy(frame_threshold), right_mask)
+
+    # print(f"{im_name} Pixels that are lit {np.sum(frame_threshold / 255) * 100 / (90*115)}%")
+    # cv2.imshow(f"original resized {im_name}", image)
+    # cv2.imshow(f"threshed {im_name}", frame_threshold)
+    # cv2.waitKey()
+
+    result_tup = [0, 0]
+    if np.sum(frame_threshold_left / 255) * 100 / (90*115) > HEAD_LIGHT_THRESH: result_tup[0] = 1
+    if np.sum(frame_threshold_right / 255) * 100 / (90*115) > HEAD_LIGHT_THRESH: result_tup[1] = 1
+    return result_tup
