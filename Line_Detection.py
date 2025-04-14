@@ -170,6 +170,8 @@ def get_ray_from_points(line_points_list):
 def get_origins_from_points(best_direction_list, best_inliers_list):
     origins = []
     for i in range(len(best_direction_list)):
+        if not len(best_inliers_list[i]):
+            continue
         p0 = best_inliers_list[i][-1] 
         t = -p0[1] / best_direction_list[i][1]
         origin = p0 + t* best_direction_list[i]

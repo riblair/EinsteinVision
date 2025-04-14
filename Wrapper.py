@@ -25,6 +25,7 @@ def env_setup():
     Parser.add_argument("--Video_Name", default="output.mp4", type=str, help="Name of Output video.")
     Args = Parser.parse_args()
 
+    os.makedirs("Scenes/", exist_ok=True)
     os.makedirs(Args.Outputs, exist_ok=True)
     os.makedirs(Args.Outputs+"Video/", exist_ok=True)
     return Args
@@ -48,6 +49,7 @@ def main():
         rand_start = 860
     else:
         rand_start = args.Start
+    rand_start = 0
     cap.set(cv2.CAP_PROP_POS_FRAMES, rand_start)
     scene_counter = -1
 
@@ -62,8 +64,6 @@ def main():
     print("---Processing Video---")
     while True:
         scene_counter+=1
-        if not scene_counter % 6 == 0:
-            continue
         object_list = []
         # Read a frame from the video
         ret, frame = cap.read()
@@ -89,9 +89,6 @@ def main():
             "objects" : [obj.to_json() for obj in object_list]
         }
         data_dictionary["Scenes"].append(objects_dict)
-        
-        if scene_counter >= 180:
-            break
         
     print("---Writing to Json---")
     with open(args.Json_Name, 'w') as f:

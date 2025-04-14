@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from ultralytics import YOLO
+from pathlib import Path
 
 # graphing constants
 COLORS = ['Red','Green', 'Blue', 'Orange', 'Black']
@@ -52,7 +53,7 @@ def load_models(model_path) -> dict:
     models["depth"] = torch.hub.load("isl-org/ZoeDepth", "ZoeD_N", pretrained=True).to(device)
     models["objects"].append(YOLO(f"{model_path}general.pt", verbose=False).to(device))
     models["objects"].append(YOLO(f"{model_path}traffic_signs1.pt", verbose=False).to(device))
-    models["OCR"] = easyocr.Reader(['en'])
+    models["OCR"] = easyocr.Reader(['en'], model_storage_directory="~/.EasyOCR/model", user_network_directory="~/.EasyOCR/user_network")
     models["car_orient"] = YOLO(f"{model_path}classification.pt", verbose=False).to(device)
     models["human_pose"] = YOLO(f"{model_path}yolo11n-pose.pt", verbose=False).to(device)
     return models
@@ -209,7 +210,6 @@ def three_point_angle_2D(point1, point2, point3):
     vec1 = point1-point2
     vec2 = point2-point3
     return np.arccos(np.dot(vec1, vec2) / (np.linalg.norm(vec1)*np.linalg.norm(vec2)))
-
 
 x_offset = 90
 y_offset = 70
