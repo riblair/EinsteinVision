@@ -8,3 +8,4 @@ scenes.json
 Output/
 einsteinvenv/
 slurm_out/
+.venv/

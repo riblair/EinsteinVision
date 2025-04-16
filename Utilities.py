@@ -8,6 +8,8 @@ import torch
 from ultralytics import YOLO
 from pathlib import Path
 
+from Object import Object
+
 # graphing constants
 COLORS = ['Red','Green', 'Blue', 'Orange', 'Black']
 
@@ -53,7 +55,7 @@ def load_models(model_path) -> dict:
     models["depth"] = torch.hub.load("isl-org/ZoeDepth", "ZoeD_N", pretrained=True).to(device)
     models["objects"].append(YOLO(f"{model_path}general.pt", verbose=False).to(device))
     models["objects"].append(YOLO(f"{model_path}traffic_signs1.pt", verbose=False).to(device))
-    models["OCR"] = easyocr.Reader(['en'], model_storage_directory="~/.EasyOCR/model", user_network_directory="~/.EasyOCR/user_network")
+    # models["OCR"] = easyocr.Reader(['en'], model_storage_directory="~/.EasyOCR/model", user_network_directory="~/.EasyOCR/user_network")
     models["car_orient"] = YOLO(f"{model_path}classification.pt", verbose=False).to(device)
     models["human_pose"] = YOLO(f"{model_path}yolo11n-pose.pt", verbose=False).to(device)
     return models
@@ -251,3 +253,15 @@ def thresh_headlights(image: np.ndarray) -> list:
     if np.sum(frame_threshold_left / 255) * 100 / (90*115) > HEAD_LIGHT_THRESH: result_tup[0] = 1
     if np.sum(frame_threshold_right / 255) * 100 / (90*115) > HEAD_LIGHT_THRESH: result_tup[1] = 1
     return result_tup
+
+def averageVelocityFromFlow(flow_image: np.ndarray, obj: Object):
+        delta_x = flow_image[:, :, 0]
+        delta_y = flow_image[:, :, 1]
+        
+        delta_X = obj.pose[2] * delta_x
+        delta_Y = obj.pose[2] * delta_y
+        
+        average_delta_X = np.mean(delta_X[delta_X != 0])
+        average_delta_Y = np.mean(delta_Y[delta_Y != 0])
+
+        return np.arctan2(average_delta_X, average_delta_Y)

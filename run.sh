@@ -19,8 +19,10 @@ source ./einsteinvenv/bin/activate
 
 pip install -r requirements.txt
 # so far 10 and 7 are running fully
-scene_list=(6 5 4 8)
-start_list=(850 600 254 60)
+
+# Edit values so that they are videos 7 through 12
+scene_list=(6 5 4 8)  # Do all 14
+start_list=(850 600 254 60)  # Set to 0
 Json_Name_list=("6" "5" "4" "8")
 Outputs_list=("Outputs6/" "Outputs5/" "Outputs4/" "Outputs8/")
 Video_Name_list=("out6" "out5" "out4" "out8")

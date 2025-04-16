@@ -64,7 +64,7 @@ def visualize_detections(raw_detections: list[Detection], image):
     if cv2.waitKey(30) == ord('q'):
         return
 
-def refine_objects(image: np.ndarray, objects: list[Object], models: dict):
+def refine_objects(image: np.ndarray, objects: list[Object], models: dict, parking_mask, flow):
     refined = []
     for obj in objects:
         # print(obj.original_detection.class_id)
@@ -80,7 +80,7 @@ def refine_objects(image: np.ndarray, objects: list[Object], models: dict):
             new_obj = Person.parse_person(image, obj, models["human_pose"])
             refined.append(new_obj)
         elif obj.original_detection.class_id == 'car' or obj.original_detection.class_id == 'truck':
-            new_obj = Car.parse_car(image, obj, models["car_orient"])
+            new_obj = Car.parse_car(image, obj, models["car_orient"], parking_mask, flow)
             refined.append(new_obj)
         else:
             refined.append(obj)
@@ -88,7 +88,7 @@ def refine_objects(image: np.ndarray, objects: list[Object], models: dict):
 
 def main():
     # NOTE: Temporary code to test functions in this file. Much of this logic can be written in main.py
-    cap = cv2.VideoCapture("Videos/scene10_front.mp4") # scene 6 is a disaster...
+    cap = cv2.VideoCapture("Videos/scene5_front.mp4") # scene 6 is a disaster...
     # torch.hub.help("intel-isl/MiDaS", "DPT_BEiT_L_384", force_reload=True)
     rand_start = 720
     counter = 0
@@ -137,15 +137,15 @@ def main():
             cv2.rectangle(anno_frame, np.uint16(detection.top_left), np.uint16(detection.bottom_right), (255, 0, 0), 1)
             cv2.circle(anno_frame, np.uint16(detection.center), 1, (255,255,0), 3)
             cv2.putText(anno_frame, detection.class_id, np.uint16(detection.center), cv2.FONT_HERSHEY_COMPLEX, 0.3, (255, 255, 0), 1)
-            if detection.class_id == 'person':
-                patch = frame[int(detection.top_left[1]):int(detection.bottom_right[1]), int(detection.top_left[0]):int(detection.bottom_right[0])]
-                result = human_pose_model(patch)[0]
-                keypoints = result.keypoints.data.cpu().numpy()[0, :, :]
-                keypoints[:, 0] += detection.top_left[0]
-                keypoints[:, 1] += detection.top_left[1]
-                detection.keypoints = keypoints
-                detection.facing_away = is_person_facing_camera(keypoints)    
-                cv2.putText(anno_frame, str(detection.facing_away), np.uint16(detection.center+10), cv2.FONT_HERSHEY_COMPLEX, 0.3, (255, 255, 0), 1)  
+            # if detection.class_id == 'person':
+            #     patch = frame[int(detection.top_left[1]):int(detection.bottom_right[1]), int(detection.top_left[0]):int(detection.bottom_right[0])]
+            #     # result = human_pose_model(patch)[0]
+            #     keypoints = result.keypoints.data.cpu().numpy()[0, :, :]
+            #     keypoints[:, 0] += detection.top_left[0]
+            #     keypoints[:, 1] += detection.top_left[1]
+            #     detection.keypoints = keypoints
+            #     detection.facing_away = is_person_facing_camera(keypoints)    
+            #     cv2.putText(anno_frame, str(detection.facing_away), np.uint16(detection.center+10), cv2.FONT_HERSHEY_COMPLEX, 0.3, (255, 255, 0), 1)  
                 
             if detection.keypoints is None:
                 continue
