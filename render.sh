@@ -4,9 +4,9 @@
 #SBATCH --mem=32g
 #SBATCH -J "Einstein Vision Rendering"
 #SBATCH -A rbe549
+#SBATCH --array=0-7
 #SBATCH -p academic
 #SBATCH -t 23:59:59
-#SBATCH --gres=gpu:1
 #SBATCH --error=slurm_out/slurm_einstein_render_%A.err
 #SBATCH --output=slurm_out/slurm_einstein_render_%A.out
 #SBATCH --mail-user=rpblair@wpi.edu
@@ -17,5 +17,10 @@ module load py-pip/24.0 ffmpeg
 source ./einsteinvenv/bin/activate
 
 pip install -r requirements.txt
+
+scene_list=(1 2 3 4 5 6 7 8 9 10 11 12 13)
+Json_Name_list=("1" "2" "3" "4" "5" "6" "7" "8" "9" "10" "11" "12" "13")
+Outputs_list=("Outputs1/" "Outputs2/" "Outputs3/" "Outputs4/" "Outputs5/" "Outputs6/" "Outputs7/" "Outputs8/" "Outputs9/" "Outputs10/" "Outputs11/" "Outputs12/" "Outputs13/")
+Video_Name_list=("out1" "out2" "out3" "out4" "out5" "out6" "out7" "out8" "out9" "out10" "out11" "out12" "out13")
 
 python -u BlenderStuff.py

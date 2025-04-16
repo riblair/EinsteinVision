@@ -5,6 +5,7 @@ import mathutils
 import os
 import numpy as np
 import json
+import argparse
 
 ASSETS = {
     "car": "Assets/Vehicles/SedanAndHatchback.blend",
@@ -18,10 +19,25 @@ ASSETS = {
     "warning": "Assets/SpeedLimitSign.blend"
 }
 
+def env_setup():
+    Parser = argparse.ArgumentParser()
+    Parser.add_argument("--Scene", default="Videos/scene5_front.mp4", type=str, help="Path to video file. Default: 'scene1_front.mp4'")
+    Parser.add_argument("--Start", default="0", type=int, help="Frame to start processing on")
+    Parser.add_argument("--Json_Name", default="Scenes/scenes.json", type=str, help="filename of the json object file. Default:'scenes.json'")
+    Parser.add_argument("--Outputs", default="Output/", type=str, help="Path for rendered files. Default:'outputs/'")
+    Parser.add_argument("--Video_Name", default="output.mp4", type=str, help="Name of Output video.")
+    Args = Parser.parse_args()
+
+    os.makedirs("Scenes/", exist_ok=True)
+    os.makedirs(Args.Outputs, exist_ok=True)
+    os.makedirs(Args.Outputs+"Video/", exist_ok=True)
+    return Args
+
 # TODO, make this chunkable and run rendering in seperate processes...
 def main():
-    render_images("Scenes/scenes.json", "Output/", "Videos/scene5_front.mp4", 860)
-    # directory_to_video("Outputs10_2/Video/", "out10_2.mp4")
+    args = env_setup()
+    render_images(args.Json_Name, args.Outputs, args.Scene, args.Start)
+    directory_to_video(args.Outputs+"Video/", args.Video_Name)
 
 
 def setup_scene():
