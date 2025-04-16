@@ -170,6 +170,7 @@ class Car(Object):
         obj_dict["direction"] = self.direction
         obj_dict["light_array"] = self.light_arr
         obj_dict["is_parked"] = int(self.is_parked)
+        obj_dict["movement_direction"] = float(self.direction_angle)
         return obj_dict
     
     @classmethod
@@ -192,7 +193,6 @@ class Car(Object):
             light_arr[1] = light_vals[0]
             light_arr[3] = light_vals[1]
 
-        # TODO: Figure this out
         parking_mask_patch = obj.original_detection.get_crop(parking_mask)
         parking_count = np.count_nonzero(parking_mask_patch == 255)
         percent = parking_count / parking_mask_patch.size

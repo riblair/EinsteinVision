@@ -20,7 +20,7 @@ from OpticalFlow import OpticalFlow
 def env_setup():
     Parser = argparse.ArgumentParser()
     Parser.add_argument("--Scene", default="Videos/scene5_front.mp4", type=str, help="Path to video file. Default: 'scene1_front.mp4'")
-    Parser.add_argument("--Start", default="-1", type=int, help="Frame to start processing on")
+    Parser.add_argument("--Start", default="0", type=int, help="Frame to start processing on")
     Parser.add_argument("--Json_Name", default="Scenes/scenes.json", type=str, help="filename of the json object file. Default:'scenes.json'")
     Parser.add_argument("--Outputs", default="Output/", type=str, help="Path for rendered files. Default:'outputs/'")
     Parser.add_argument("--Video_Name", default="output.mp4", type=str, help="Name of Output video.")
@@ -32,11 +32,8 @@ def env_setup():
     return Args
 
 # TODO list:
-# URGENT: Correct Projection equations
 # URGENT: Try different Depth Models 
 # Med Priority: Color on Traffic Signs
-# Med Priority: Pedestrain Pose
-# Med Priority: Traffic Sign Graphics
 # Low Priority: Objects (trafic cones, trashcans)
 # Low Priority: Improve Line Detection pipeline - See Line_Detection.py
 
@@ -46,11 +43,7 @@ def main():
     cap = cv2.VideoCapture(args.Scene)
     if not cap.isOpened():
         raise RuntimeError("Error: Could not open video file.")
-    if args.Start == -1:
-        rand_start = 860
-    else:
-        rand_start = args.Start
-    # rand_start = 70
+    rand_start = args.Start
     cap.set(cv2.CAP_PROP_POS_FRAMES, rand_start)
     scene_counter = -1
 
@@ -71,7 +64,7 @@ def main():
     
     while True:
         scene_counter+=1
-        # if scene_counter == 4:
+        # if scene_counter == 10:
         #     break
         object_list = []
         # Read a frame from the video

@@ -20,8 +20,8 @@ ASSETS = {
 
 # TODO, make this chunkable and run rendering in seperate processes...
 def main():
-    render_images("scenes.json", "Output/", "Videos/scene10_front.mp4", 650)
-    directory_to_video("Outputs10_2/Video/", "out10_2.mp4")
+    render_images("Scenes/scenes.json", "Output/", "Videos/scene5_front.mp4", 860)
+    # directory_to_video("Outputs10_2/Video/", "out10_2.mp4")
 
 
 def setup_scene():
@@ -30,21 +30,29 @@ def setup_scene():
     scene.render.resolution_y = 960
     scene.render.resolution_percentage = 100 
 
-    # Make sure a world is assigned
-    if bpy.context.scene.world is None:
-        bpy.context.scene.world = bpy.data.worlds.new("World")
+    for obj in list(bpy.data.objects):
+        if obj.name != "Camera":
+            bpy.data.objects.remove(obj, do_unlink=True)
+    bpy.ops.outliner.orphans_purge(do_local_ids=True, do_linked_ids=True, do_recursive=True)
 
-    # world = bpy.context.scene.world
 
-    # # Use nodes (required for background color in Cycles and Eevee)
-    # world.use_nodes = True
-    # bg_node = world.node_tree.nodes.get("Background")
-    # if bg_node:
-    #     bg_node.inputs[0].default_value = (0.1, 0.1, 0.1, 1.0)
+    absolute_path = os.path.abspath("Assets/Background.blend")
+    # Loading world w/ background
+    bpy.ops.wm.append(
+    filepath=absolute_path,
+    directory=absolute_path + "/World",
+    filename="World")
 
-    # bpy.ops.object.light_add(type='SUN', location=(0, -2, 10))
-    # bpy.data.lights["Sun"].energy = 10  # Harnessing the full unmatched power of the sun
-    load_objects("Assets/Background.blend")
+    # loading camera, sun, ground plane
+    bpy.ops.wm.append(
+    filepath=absolute_path,
+    directory=absolute_path + "/Collection/",
+    filename="Collection")
+
+    for obj in list(bpy.data.objects):
+        if obj.name == "Camera.001":
+            bpy.data.objects.remove(obj, do_unlink=True)
+    scene.world = bpy.data.worlds[1]
     scene.unit_settings.system = 'METRIC'
     bpy.context.scene.world.mist_settings.use_mist = False
     return scene
@@ -134,6 +142,7 @@ def handle_pedestrian(pose_vector, blend_file, joint_dict):
 
 def handle_vehicle(pose_vector, blend_file, direction, lights, is_parked):
     objects = load_objects(blend_file)
+    # if (pose_vector[5] - 0 > 0.01): # if we have a non-zero yaw
     if direction == "front":
         pose_vector[5] = np.pi
     elif direction == "left": 
@@ -142,7 +151,7 @@ def handle_vehicle(pose_vector, blend_file, direction, lights, is_parked):
         pose_vector[5] = -np.pi/2
     update_pose(objects, pose_vector)
 
-    vehicle_color = (0.8, 0.8, 0.8, 1) if not is_parked else (0.2, 0.2, 0.2, 1) 
+    vehicle_color = (0.8, 0.8, 0.8, 1) if not is_parked else (0.1, 0.1, 0.1, 1) 
 
     for obj in objects:
         if "Front_Left_Light" in obj.name:
@@ -186,16 +195,16 @@ def render_images(json_filepath, output_dir, video_file, start_frame):
     cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
 
     scene = setup_scene()
+    bpy.context.view_layer.update()
     with open(json_filepath, 'r') as fp:
         data = json.load(fp)
 
     cam_location = data["camera_pose"][0:3]
     cam_euler = data["camera_pose"][3:]
     camera = bpy.data.objects.get("Camera")
-    # camera.matrix_basis = mathutils.Matrix.Translation(tuple(cam_location))
+    
     camera.location = mathutils.Vector(cam_location)
     camera.rotation_euler = mathutils.Euler(cam_euler)
-    bpy.context.view_layer.update()
 
     scene_list = data["Scenes"]
     for i in range(len(scene_list)):
