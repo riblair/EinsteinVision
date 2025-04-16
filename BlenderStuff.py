@@ -20,7 +20,7 @@ ASSETS = {
 
 # TODO, make this chunkable and run rendering in seperate processes...
 def main():
-    #render_images("scenes.json", "Output/", "Videos/scene10_front.mp4", 650)
+    render_images("scenes.json", "Output/", "Videos/scene10_front.mp4", 650)
     directory_to_video("Outputs10_2/Video/", "out10_2.mp4")
 
 
@@ -34,16 +34,17 @@ def setup_scene():
     if bpy.context.scene.world is None:
         bpy.context.scene.world = bpy.data.worlds.new("World")
 
-    world = bpy.context.scene.world
+    # world = bpy.context.scene.world
 
-    # Use nodes (required for background color in Cycles and Eevee)
-    world.use_nodes = True
-    bg_node = world.node_tree.nodes.get("Background")
-    if bg_node:
-        bg_node.inputs[0].default_value = (0.1, 0.1, 0.1, 1.0)
+    # # Use nodes (required for background color in Cycles and Eevee)
+    # world.use_nodes = True
+    # bg_node = world.node_tree.nodes.get("Background")
+    # if bg_node:
+    #     bg_node.inputs[0].default_value = (0.1, 0.1, 0.1, 1.0)
 
-    bpy.ops.object.light_add(type='SUN', location=(0, -2, 10))
-    bpy.data.lights["Sun"].energy = 10  # Harnessing the full unmatched power of the sun
+    # bpy.ops.object.light_add(type='SUN', location=(0, -2, 10))
+    # bpy.data.lights["Sun"].energy = 10  # Harnessing the full unmatched power of the sun
+    load_objects("Assets/Background.blend")
     scene.unit_settings.system = 'METRIC'
     bpy.context.scene.world.mist_settings.use_mist = False
     return scene
@@ -157,7 +158,7 @@ def handle_vehicle(pose_vector, blend_file, direction, lights, is_parked):
 
 def reset_scene():
     bpy.ops.object.select_all(action='DESELECT')
-    kept_objs = ["Camera", "Sun", "Light"]
+    kept_objs = ["Camera", "Sun", "Ground"]
     for obj in list(bpy.data.objects):
         if obj.name not in kept_objs:
             bpy.data.objects.remove(obj, do_unlink=True)
