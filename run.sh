@@ -4,7 +4,7 @@
 #SBATCH --mem=32g
 #SBATCH -J "Einstein Vision Generation"
 #SBATCH -A rbe549
-#SBATCH --array=0-3
+#SBATCH --array=0-7
 #SBATCH -p academic
 #SBATCH -t 23:59:59
 #SBATCH --gres=gpu:1
@@ -21,10 +21,9 @@ pip install -r requirements.txt
 # so far 10 and 7 are running fully
 
 # Edit values so that they are videos 7 through 12
-scene_list=(6 5 4 8)  # Do all 14
-start_list=(850 600 254 60)  # Set to 0
-Json_Name_list=("6" "5" "4" "8")
-Outputs_list=("Outputs6/" "Outputs5/" "Outputs4/" "Outputs8/")
-Video_Name_list=("out6" "out5" "out4" "out8")
+scene_list=(1 2 3 4 5 6 7 8 9 10 11 12 13)  # Do all 14
+Json_Name_list=("1" "2" "3" "4" "5" "6" "7" "8" "9" "10" "11" "12" "13")
+Outputs_list=("Outputs1/" "Outputs2/" "Outputs3/" "Outputs4/" "Outputs5/" "Outputs6/" "Outputs7/" "Outputs8/" "Outputs9/" "Outputs10/" "Outputs11/" "Outputs12/" "Outputs13/")
+Video_Name_list=("out1" "out2" "out3" "out4" "out5" "out6" "out7" "out8" "out9" "out10" "out11" "out12" "out13")
 export EASYOCR_CACHE_DIR=$HOME/.easyocr_models
-python -u Wrapper.py --Scene "Videos/scene${scene_list[$SLURM_ARRAY_TASK_ID]}_front.mp4" --Start ${start_list[$SLURM_ARRAY_TASK_ID]} --Json_Name "Scenes/scene${Json_Name_list[$SLURM_ARRAY_TASK_ID]}.json" --Outputs ${Outputs_list[$SLURM_ARRAY_TASK_ID]} --Video_Name "${Video_Name_list[$SLURM_ARRAY_TASK_ID]}.mp4"
+python -u Wrapper.py --Scene "Videos/scene${scene_list[$SLURM_ARRAY_TASK_ID]}_front.mp4" --Json_Name "Scenes/scene${Json_Name_list[$SLURM_ARRAY_TASK_ID]}.json" --Outputs ${Outputs_list[$SLURM_ARRAY_TASK_ID]} --Video_Name "${Video_Name_list[$SLURM_ARRAY_TASK_ID]}.mp4"
