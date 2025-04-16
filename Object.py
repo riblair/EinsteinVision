@@ -158,11 +158,12 @@ class Person(Object):
         return new_obj
 
 class Car(Object):
-    def __init__(self, original_detection, pose, direction, light_arr, is_parked):
+    def __init__(self, original_detection, pose, direction, light_arr, is_parked, direction_angle):
         super().__init__(original_detection, pose)
         self.direction = direction
         self.light_arr = light_arr
         self.is_parked = is_parked
+        self.direction_angle = direction_angle
 
     def to_json(self):
         obj_dict = super().to_json()
@@ -172,7 +173,7 @@ class Car(Object):
         return obj_dict
     
     @classmethod
-    def parse_car(cls, image, obj: Object, orientation_model):
+    def parse_car(cls, image, obj: Object, orientation_model, parking_mask, flow):
         patch = obj.original_detection.get_crop(image)
         results = orientation_model(patch)
         predicted_class = results[0].names[results[0].probs.top1]
@@ -192,8 +193,16 @@ class Car(Object):
             light_arr[3] = light_vals[1]
 
         # TODO: Figure this out
-        is_parked = False
-        return Car(obj.original_detection, obj.pose, side, light_arr, is_parked)
+        parking_mask_patch = obj.original_detection.get_crop(parking_mask)
+        parking_count = np.count_nonzero(parking_mask_patch == 255)
+        percent = parking_count / parking_mask_patch.size
+        is_parked = False if percent < 0.1 else True
+        car_direction_angle = 0.0
+        if not is_parked:
+            flow_patch = obj.original_detection.get_crop(flow)
+            car_direction_angle = util.averageVelocityFromFlow(flow_patch, obj)
+            print(f"Car Direction Angle: {car_direction_angle}")
+        return Car(obj.original_detection, obj.pose, side, light_arr, is_parked, car_direction_angle)
             
             
         

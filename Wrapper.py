@@ -15,10 +15,11 @@ import Utilities as util
 import ModelDetection as md
 from Detection import Detection
 from Object import Object
+from OpticalFlow import OpticalFlow
 
 def env_setup():
     Parser = argparse.ArgumentParser()
-    Parser.add_argument("--Scene", default="Videos/scene10_front.mp4", type=str, help="Path to video file. Default: 'scene1_front.mp4'")
+    Parser.add_argument("--Scene", default="Videos/scene5_front.mp4", type=str, help="Path to video file. Default: 'scene1_front.mp4'")
     Parser.add_argument("--Start", default="-1", type=int, help="Frame to start processing on")
     Parser.add_argument("--Json_Name", default="Scenes/scenes.json", type=str, help="filename of the json object file. Default:'scenes.json'")
     Parser.add_argument("--Outputs", default="Output/", type=str, help="Path for rendered files. Default:'outputs/'")
@@ -49,7 +50,7 @@ def main():
         rand_start = 860
     else:
         rand_start = args.Start
-    rand_start = 0
+    # rand_start = 70
     cap.set(cv2.CAP_PROP_POS_FRAMES, rand_start)
     scene_counter = -1
 
@@ -62,13 +63,23 @@ def main():
             "Scenes" : []
         }
     print("---Processing Video---")
+    
+    # Use first frame to init Optical Flow
+    ret, frame = cap.read()
+    of = OpticalFlow(frame)
+    
+    
     while True:
         scene_counter+=1
+        # if scene_counter == 4:
+        #     break
         object_list = []
         # Read a frame from the video
         ret, frame = cap.read()
         if not ret: # no more frames
             break
+        # Update optical flow to get parking mask
+        _ = of.update(frame)
         # Can you parse more than one frame at a time through the model? 
         depth_image = model_dict["depth"].infer_pil(frame) # very slow :/
         print("---Detecting objects in scene---")
@@ -80,7 +91,7 @@ def main():
         object_list.extend(lane_line_list)
 
         localized_objects = md.detections_to_world(raw_detections, depth_image)
-        refined_objects = md.refine_objects(frame, localized_objects, model_dict)
+        refined_objects = md.refine_objects(frame, localized_objects, model_dict, of.mask, of.flow)
 
         object_list.extend(refined_objects)
 
